@@ -121,6 +121,9 @@ sub listen {
 		my	$magic;
 		$magic = unpack("C", $handle->{rbuf});
 		if($magic == 0x24){
+			if(length($handle->{rbuf}) < 4){
+				return;
+			}
 			$len = unpack("n", substr($handle->{rbuf}, 2, 4));
 			$len += 4;
 			$handle->push_read(

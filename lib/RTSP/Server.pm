@@ -101,20 +101,20 @@ has 'add_source_update_callback' => (
     is => 'rw',
     default => sub {
         sub{
-            print "default add mounts callback\n";
+            return;
         }
     },
     traits => [ 'NoGetopt' ],
 );
 
 has 'remove_source_update_callback' => (
-	is => 'rw',
-	default => sub {
-		sub{
-			print "default remove mounts callback\n";
-		}
-	},
-	traits => [ 'NoGetopt'],
+    is => 'rw',
+    default => sub {
+        sub{
+            return;
+        }
+    },
+    traits => [ 'NoGetopt'],
 );
 
 sub client_count {

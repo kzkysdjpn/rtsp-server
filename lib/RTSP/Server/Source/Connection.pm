@@ -26,6 +26,12 @@ has 'channel_sockets' => (
     default => sub { {} },
 );
 
+has 'interleaved_mode' => (
+    is => 'rw',
+    isa => 'Int',
+    default => 0,
+);
+
 around 'public_options' => sub {
     my ($orig, $self) = @_;
 
@@ -69,6 +75,7 @@ sub start_rtp_server {
                 host => $self->local_address,
                 addr_family => $self->addr_family,
                 port => $port,
+                interleaved_mode => $self->interleaved_mode,
             );
 
             push @{ $self->rtp_listeners }, $listener;
@@ -171,7 +178,6 @@ sub setup {
     my ($self) = @_;
     my @chan_str;
     my @chan;
-    my $interleaved;
     my $server_port;
     my $mount_path = $self->get_mount_path
         or return $self->not_found;
@@ -190,10 +196,10 @@ sub setup {
     my $transport = $self->get_req_header('Transport')
         or return $self->bad_request;
 
-    $interleaved = 0;
-    @chan_str =
-        $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
+    $self->interleaved_mode(0);
     if(index($transport, "interleaved=") != -1){
+        @chan_str =
+            $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
         unless(length($chan_str[0])){
             return $self->bad_request;
         }
@@ -202,7 +208,7 @@ sub setup {
         }
         $chan[0] = $chan_str[0] + 0;
         $chan[1] = $chan_str[1] + 0;
-        $interleaved = 1;
+        $self->interleaved_mode(1);
     }
     $stream_id ||= 0;
 
@@ -220,13 +226,13 @@ sub setup {
 
     # add our RTP ports to transport header response
     my $port_range = $stream->rtp_port_range;
-    if($interleaved){
+    if($self->interleaved_mode){
         $self->add_resp_header("Transport", "$transport");
     }else{
         $self->add_resp_header("Transport", "$transport;server_port=$port_range");
     }
 
-    if($interleaved){
+    if($self->interleaved_mode){
         my($name, $alias, $udp_proto) = AnyEvent::Socket::getprotobyname('udp');
 
         # create UDP socket for internal packet stream
