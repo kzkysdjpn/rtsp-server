@@ -52,6 +52,12 @@ has 'socket' => (
     is => 'rw',
 );
 
+has 'interleaved_mode' => (
+    is => 'rw',
+    isa => 'Int',
+    default => 0,
+);
+
 sub listen {
     my ($self) = @_;
 
@@ -62,9 +68,17 @@ sub listen {
 
     my $addr;
     if ($self->addr_family == AF_INET) {
-        $addr = sockaddr_in($self->port, Socket::inet_aton($self->host));
+        if($self->interleaved_mode){
+            $addr = sockaddr_in($self->port, Socket::inet_aton("localhost"));
+        }else{
+            $addr = sockaddr_in($self->port, Socket::inet_aton($self->host));
+        }
     } elsif ($self->addr_family == AF_INET6) {
-        $addr = sockaddr_in6($self->port, Socket6::inet_pton(AF_INET6, $self->host));
+        if($self->interleaved_mode){
+            $addr = sockaddr_in6($self->port, Socket6::inet_pton(AF_INET6, "localhost"));
+        }else{
+            $addr = sockaddr_in6($self->port, Socket6::inet_pton(AF_INET6, $self->host));
+        }
     }
     unless (bind $sock, $addr) {
         warn("Error binding UDP listener to port " . $self->port . ": $!");
@@ -80,7 +94,6 @@ sub listen {
         fh => $sock,
         poll => 'r', cb => sub {
             my $sender_addr = recv $sock, $buf, $read_size, 0;
-
             # TODO: compare $sender_addr to expected addr
 
             if (! defined $sender_addr) {
