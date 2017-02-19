@@ -107,6 +107,7 @@ sub listen {
             fh => $fh,
             on_eof => sub {
                 $self->debug("Got EOF on listener");
+                $conn->cleanup;
                 $cleanup->();
             },
             on_error => sub {
@@ -153,6 +154,7 @@ sub listen {
                             /ix;
 
                             unless ($method && $version) {
+                                $DB::single=1;
                                 $self->error("Unable to parse request '$line'");
                                 $conn->push_response(400, "Bad Request");
                                 return;
