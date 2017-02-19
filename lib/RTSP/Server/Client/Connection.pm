@@ -54,6 +54,7 @@ sub play {
     # TODO: check auth
 
     $self->push_ok;
+    $self->mount_path_key($mount->path);
 }
 
 sub stop {
@@ -174,6 +175,28 @@ sub finish {
     }
 
     $self->client_sockets({});
+    if(defined($self->mount_path_key)){
+        $self->clear_mount_path_key;
+    }
+}
+
+sub cleanup {
+    my ($self) = @_;
+    unless(defined($self->mount_path_key)){
+        return;
+    }
+    my $mount = $self->get_mount($self->mount_path_key);
+    $mount->remove_client($self) if $mount;
+
+    $self->streams({});
+
+    my @sockets = values %{ $self->client_sockets };
+    foreach my $sock (@sockets) {
+        shutdown $sock, 1;  # done writing
+    }
+
+    $self->client_sockets({});
+    $self->clear_mount_path_key;
 }
 
 sub DEMOLISH {

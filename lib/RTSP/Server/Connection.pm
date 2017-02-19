@@ -56,6 +56,12 @@ has 'req_uri' => (
     clearer => 'clear_req_uri',
 );
 
+has 'mount_path_key' => (
+    is => 'rw',
+    isa => 'Str',
+    clearer => 'clear_mount_path_key',
+);
+
 has 'expecting_header' => (
     is => 'rw',
     isa => 'Bool',
@@ -370,7 +376,6 @@ sub mount {
     );
 
     $self->mounts->{$path} = $mount;
-
     $self->info("Mounted $path");
 
     return $mount;
@@ -385,6 +390,7 @@ sub unmount {
     $self->server->remove_source_update_callback->();
 
     $self->info("Unmounting $path");
+    $self->clear_mount_path_key;
 }
 
 sub reset {

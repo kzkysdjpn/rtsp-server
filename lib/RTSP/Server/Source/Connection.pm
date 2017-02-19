@@ -54,6 +54,22 @@ before 'teardown' => sub {
     $self->end_rtp_server;
 };
 
+sub cleanup {
+    my ($self) = @_;
+    unless(defined($self->mount_path_key)){
+        return;
+    }
+    my $mount = $self->get_mount($self->mount_path_key);
+
+    if ($mount) {
+        # TODO: notify clients connected to mount that it is closing
+
+        # should make sure stream is unmounted
+        $self->unmount($self->mount_path_key);
+    }
+    $self->end_rtp_server;
+}
+
 sub start_rtp_server {
     my ($self) = @_;
 
@@ -123,7 +139,6 @@ sub record {
     }
 
     $self->debug("Got record for mountpoint " . $mount->path);
-
     # save range if present
     my $range = $self->get_req_header('Range');
     $range ? $mount->range($range) : $mount->clear_range;
@@ -135,6 +150,7 @@ sub record {
     } else {
         $self->not_found;
     }
+    $self->mount_path_key($mount->path);
 }
 
 sub announce {
