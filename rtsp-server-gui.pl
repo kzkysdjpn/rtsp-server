@@ -39,23 +39,13 @@ sub close_event {
 }
 
 sub add_source_update_callback{
-	print("Add source operation\n");
-	$gui->clear_mount_element;
-	foreach my $path(keys %{$srv->mounts}){
-		$gui->add_mount_element(substr($path, 1));
-		print substr($path, 1) . "\n";
-    	}
-	print("\n");
-	return;
+    my ($path) = @_;
+    print("Add mount point " . $path . "\n");
+    return;
 }
 
 sub remove_source_update_callback{
-	print("Remove source operation\n");
-	$gui->clear_mount_element;
-	foreach my $path(keys %{$srv->mounts}){
-		$gui->add_mount_element(substr($path, 1));
-		print substr($path, 1) . "\n";
-	}
-	print("\n");
-	return;
+    my ($path) = @_;
+    print("Remove mount point " . $path . "\n");
+    return;
 }
