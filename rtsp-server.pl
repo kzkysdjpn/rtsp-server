@@ -10,23 +10,12 @@ use RTSP::Server;
 # you may pass your own options in here or via command-line
 my $srv = RTSP::Server->new_with_options(
 );
-$srv->add_source_update_callback(sub {
-	print("Add source operation\n");
-    foreach my $path(keys %{$srv->mounts}){
-        print substr($path, 1) . "\n";
-    }
-    print("\n");
-    return;
-});
 
-$srv->remove_source_update_callback(sub {
-	print("Remove source operation\n");
-	foreach my $path(keys %{$srv->mounts}){
-		print substr($path, 1) . "\n";
-	}
-	print("\n");
-	return;
-});
+
+$srv->add_source_update_callback(\&add_source_update_callback);
+
+$srv->remove_source_update_callback(\&remove_source_update_callback);
+
 
 # listen and accept incoming connections
 $srv->listen;
@@ -40,3 +29,15 @@ $SIG{INT} = sub {
 };
 
 $cv->recv;
+
+sub add_source_update_callback{
+    my ($path) = @_;
+    print("Add mount point " . $path . "\n");
+    return;
+}
+
+sub remove_source_update_callback{
+    my ($path) = @_;
+    print("Remove mount point " . $path . "\n");
+    return;
+}
