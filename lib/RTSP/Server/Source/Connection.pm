@@ -26,6 +26,13 @@ has 'interleaved_mode' => (
     default => 0,
 );
 
+has 'interleaved_channel_stream' => (
+    is => 'rw',
+    isa => 'HashRef',
+    default => sub { {} },
+    lazy => 1,
+);
+
 around 'public_options' => sub {
     my ($orig, $self) = @_;
 
@@ -179,7 +186,6 @@ sub announce {
 sub setup {
     my ($self) = @_;
     my @chan_str;
-    my @chan;
     my $server_port;
     my $mount_path = $self->get_mount_path
         or return $self->not_found;
@@ -197,20 +203,6 @@ sub setup {
     # should have transport header
     my $transport = $self->get_req_header('Transport')
         or return $self->bad_request;
-
-    if(index($transport, "interleaved=") != -1){
-        @chan_str =
-            $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
-        unless(length($chan_str[0])){
-            return $self->bad_request;
-        }
-        unless(length($chan_str[1])){
-            return $self->bad_request;
-        }
-        $chan[0] = $chan_str[0] + 0;
-        $chan[1] = $chan_str[1] + 0;
-        $self->interleaved_mode(1);
-    }
     $stream_id ||= 0;
 
     # create stream
@@ -224,6 +216,19 @@ sub setup {
     }
     # add stream to mount
     $mount->add_stream($stream);
+
+    # for RTSP interleaved process
+    if(index($transport, "interleaved=") != -1){
+        @chan_str =
+            $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
+        unless(length($chan_str[0])){
+            return $self->bad_request;
+        }
+        unless(length($chan_str[1])){
+            return $self->bad_request;
+        }
+        $self->interleaved_mode(1);
+    }
 
     # add our RTP ports to transport header response
     my $port_range = $stream->rtp_port_range;
