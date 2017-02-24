@@ -20,12 +20,6 @@ has 'rtp_listeners' => (
     lazy => 1,
 );
 
-has 'channel_sockets' => (
-    is => 'rw',
-    isa => 'HashRef',
-    default => sub { {} },
-);
-
 has 'interleaved_mode' => (
     is => 'rw',
     isa => 'Int',
@@ -91,7 +85,6 @@ sub start_rtp_server {
                 host => $self->local_address,
                 addr_family => $self->addr_family,
                 port => $port,
-                interleaved_mode => $self->interleaved_mode,
             );
 
             push @{ $self->rtp_listeners }, $listener;
@@ -121,13 +114,6 @@ sub end_rtp_server {
     }
 
     $self->rtp_listeners([]);
-
-    my @sockets = values %{$self->channel_sockets};
-    foreach my $sock (@sockets){
-        shutdown $sock, 1;
-        close $sock;
-    }
-    $self->channel_sockets({});
 }
 
 sub record {
@@ -212,7 +198,6 @@ sub setup {
     my $transport = $self->get_req_header('Transport')
         or return $self->bad_request;
 
-    $self->interleaved_mode(0);
     if(index($transport, "interleaved=") != -1){
         @chan_str =
             $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
@@ -248,50 +233,12 @@ sub setup {
         $self->add_resp_header("Transport", "$transport;server_port=$port_range");
     }
 
-    if($self->interleaved_mode){
-        my($name, $alias, $udp_proto) = AnyEvent::Socket::getprotobyname('udp');
-
-        # create UDP socket for internal packet stream
-        socket my($sock), $self->addr_family, SOCK_DGRAM, $udp_proto;
-        AnyEvent::Util::fh_nonblocking $sock, 1;
-        my $dest;
-        if($self->addr_family == AF_INET){
-            $dest = sockaddr_in($stream->rtp_start_port, Socket::inet_aton("localhost"));
-        }else{
-            $dest = sockaddr_in6($stream->rtp_start_port, Socket6::inet_pton(AF_INET6, "localhost"));
-        }
-        unless (connect $sock, $dest){
-            return $self->bad_request;
-        }
-        $self->channel_sockets->{$chan[0] . ""} = $sock;
-
-        # create UDP socket for internal RTCP packet stream
-        socket my($sock_rtcp), $self->addr_family, SOCK_DGRAM, $udp_proto;
-        AnyEvent::Util::fh_nonblocking $sock_rtcp, 1;
-        if($self->addr_family == AF_INET){
-            $dest = sockaddr_in($stream->build_rtp_end_port, Socket::inet_aton("localhost"));
-        }else{
-            $dest = sockaddr_in6($stream->build_rtp_end_port, Socket6::inet_pton("localhost"));
-        }
-        unless(connect $sock, $dest){
-            return $self->bad_request;
-        }
-        $self->channel_sockets->{$chan[1] . ""} = $sock_rtcp;
-    }
-
     $self->push_ok;
 }
 
 sub write_interleaved_rtp
 {
-    my ($self, $chan, $data) = @_;
-    my $sock;
-    unless(exists($self->channel_sockets->{$chan . ""})){
-        return 0;
-    }
-    $sock = $self->channel_sockets->{$chan . ""};
-
-    return send $sock, $data, 0;
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;
