@@ -115,6 +115,7 @@ sub listen {
 
                 $self->error("Got " . ($fatal ? 'fatal ' : '') . 
                              "error on $conn_class listener socket: $msg");
+                $conn->cleanup;
                 $cleanup->();
             },
             on_read => sub {
@@ -145,7 +146,7 @@ sub listen {
                     line => sub {
                         my (undef, $line, $eol) = @_;
 
-                        $self->trace("$conn_class listener: >> $line");
+                        #$self->trace("$conn_class listener: >> $line");
 
                         # parse line of request
                         if (! $conn->current_method) {
@@ -157,8 +158,8 @@ sub listen {
                             /ix;
 
                             unless ($method && $version) {
-                                $self->error("Unable to parse request '$line'");
-                                $conn->push_response(400, "Bad Request");
+                                #$self->error("Unable to parse request '$line'");
+                                #$conn->push_response(400, "Bad Request");
                                 return;
                             }
 

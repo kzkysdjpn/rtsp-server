@@ -26,7 +26,7 @@ has 'interleaved_mode' => (
     default => 0,
 );
 
-has 'interleaved_channel_stream' => (
+has 'interleaved_streamid' => (
     is => 'rw',
     isa => 'HashRef',
     default => sub { {} },
@@ -121,6 +121,7 @@ sub end_rtp_server {
     }
 
     $self->rtp_listeners([]);
+    $self->interleaved_streamid({});
 }
 
 sub record {
@@ -185,7 +186,7 @@ sub announce {
 
 sub setup {
     my ($self) = @_;
-    my @chan_str;
+    my @chan;
     my $server_port;
     my $mount_path = $self->get_mount_path
         or return $self->not_found;
@@ -219,14 +220,16 @@ sub setup {
 
     # for RTSP interleaved process
     if(index($transport, "interleaved=") != -1){
-        @chan_str =
+        @chan =
             $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
-        unless(length($chan_str[0])){
+        unless(length($chan[0])){
             return $self->bad_request;
         }
-        unless(length($chan_str[1])){
+        unless(length($chan[1])){
             return $self->bad_request;
         }
+        $self->interleaved_streamid->{$chan[0]} = $stream_id;
+        $self->interleaved_streamid->{$chan[1]} = $stream_id;
         $self->interleaved_mode(1);
     }
 
@@ -243,6 +246,19 @@ sub setup {
 
 sub write_interleaved_rtp
 {
+    my ($self, $chan, $data) = @_;
+
+    unless(exists($self->interleaved_streamid->{$chan . ""})){
+        return;
+    }
+    my $stream_id = $self->interleaved_streamid->{$chan . ""};
+
+    my $mount = $self->get_mount($self->mount_path_key)
+        or return;
+
+    my $stream = $mount->get_stream($stream_id)
+        or return;
+    $stream->broadcast($data);
     return;
 }
 
