@@ -107,6 +107,7 @@ sub listen {
             fh => $fh,
             on_eof => sub {
                 $self->debug("Got EOF on listener");
+                $conn->cleanup;
                 $cleanup->();
             },
             on_error => sub {
@@ -114,34 +115,38 @@ sub listen {
 
                 $self->error("Got " . ($fatal ? 'fatal ' : '') . 
                              "error on $conn_class listener socket: $msg");
+                $conn->cleanup;
                 $cleanup->();
             },
             on_read => sub {
-		my	$len;
-		my	$magic;
-		$magic = unpack("C", $handle->{rbuf});
-		if($magic == 0x24){
-			if(length($handle->{rbuf}) < 4){
-				return;
-			}
-			$len = unpack("n", substr($handle->{rbuf}, 2, 4));
-			$len += 4;
-			$handle->push_read(
-				chunk => $len, sub{
-                                        my (undef, $data) = @_;
-                                        my $chan;
-                                        $chan = unpack("C", substr($data, 1, 1));
-                                        $conn->write_interleaved_rtp($chan, substr($data, 4));
-					return;
-				}
+                my    $len;
+                my    $magic;
+                $magic = ord($handle->{rbuf});
+                if($magic == 0x24){
+                        if(length($handle->{rbuf}) < 4){
+                            return;
+                        }
+                        $len = unpack("n", substr($handle->{rbuf}, 2, 4));
+                        $len += 4;
+                        if($len > length $handle->{rbuf}){
+                            return;
+                        }
+                        $handle->push_read(
+			    chunk => $len, sub{
+                                my (undef, $data) = @_;
+                                my $chan;
+                                $chan = unpack("C", substr($data, 1, 1));
+                                $conn->write_interleaved_rtp($chan, substr($data, 4));
+                                return;
+                            }
 			);
 			return;
-		}
+                }
                 $handle->push_read(
                     line => sub {
                         my (undef, $line, $eol) = @_;
 
-                        $self->trace("$conn_class listener: >> $line");
+                        #$self->trace("$conn_class listener: >> $line");
 
                         # parse line of request
                         if (! $conn->current_method) {
@@ -153,8 +158,8 @@ sub listen {
                             /ix;
 
                             unless ($method && $version) {
-                                $self->error("Unable to parse request '$line'");
-                                $conn->push_response(400, "Bad Request");
+                                #$self->error("Unable to parse request '$line'");
+                                #$conn->push_response(400, "Bad Request");
                                 return;
                             }
 

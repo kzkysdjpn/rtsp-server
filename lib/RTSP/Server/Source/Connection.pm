@@ -20,10 +20,17 @@ has 'rtp_listeners' => (
     lazy => 1,
 );
 
-has 'channel_sockets' => (
+has 'interleaved_mode' => (
+    is => 'rw',
+    isa => 'Int',
+    default => 0,
+);
+
+has 'interleaved_streamid' => (
     is => 'rw',
     isa => 'HashRef',
     default => sub { {} },
+    lazy => 1,
 );
 
 has 'interleaved_mode' => (
@@ -53,6 +60,22 @@ before 'teardown' => sub {
 
     $self->end_rtp_server;
 };
+
+sub cleanup {
+    my ($self) = @_;
+    unless(defined($self->mount_path_key)){
+        return;
+    }
+    my $mount = $self->get_mount($self->mount_path_key);
+
+    if ($mount) {
+        # TODO: notify clients connected to mount that it is closing
+
+        # should make sure stream is unmounted
+        $self->unmount($self->mount_path_key);
+    }
+    $self->end_rtp_server;
+}
 
 sub start_rtp_server {
     my ($self) = @_;
@@ -105,13 +128,7 @@ sub end_rtp_server {
     }
 
     $self->rtp_listeners([]);
-
-    my @sockets = values %{$self->channel_sockets};
-    foreach my $sock (@sockets){
-        shutdown $sock, 1;
-        close $sock;
-    }
-    $self->channel_sockets({});
+    $self->interleaved_streamid({});
 }
 
 sub record {
@@ -123,7 +140,6 @@ sub record {
     }
 
     $self->debug("Got record for mountpoint " . $mount->path);
-
     # save range if present
     my $range = $self->get_req_header('Range');
     $range ? $mount->range($range) : $mount->clear_range;
@@ -131,10 +147,11 @@ sub record {
     if ($self->start_rtp_server) {
         $self->push_ok;
         $mount->mounted(1);
-        $self->server->add_source_update_callback->();
+        $self->server->add_source_update_callback->($mount->path);
     } else {
         $self->not_found;
     }
+    $self->mount_path_key($mount->path);
 }
 
 sub announce {
@@ -176,7 +193,6 @@ sub announce {
 
 sub setup {
     my ($self) = @_;
-    my @chan_str;
     my @chan;
     my $server_port;
     my $mount_path = $self->get_mount_path
@@ -195,21 +211,6 @@ sub setup {
     # should have transport header
     my $transport = $self->get_req_header('Transport')
         or return $self->bad_request;
-
-    $self->interleaved_mode(0);
-    if(index($transport, "interleaved=") != -1){
-        @chan_str =
-            $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
-        unless(length($chan_str[0])){
-            return $self->bad_request;
-        }
-        unless(length($chan_str[1])){
-            return $self->bad_request;
-        }
-        $chan[0] = $chan_str[0] + 0;
-        $chan[1] = $chan_str[1] + 0;
-        $self->interleaved_mode(1);
-    }
     $stream_id ||= 0;
 
     # create stream
@@ -224,6 +225,21 @@ sub setup {
     # add stream to mount
     $mount->add_stream($stream);
 
+    # for RTSP interleaved process
+    if(index($transport, "interleaved=") != -1){
+        @chan =
+            $transport =~ m/interleaved=(\d+)(?:\-(\d+))/smi;
+        unless(length($chan[0])){
+            return $self->bad_request;
+        }
+        unless(length($chan[1])){
+            return $self->bad_request;
+        }
+        $self->interleaved_streamid->{$chan[0]} = $stream_id;
+        $self->interleaved_streamid->{$chan[1]} = $stream_id;
+        $self->interleaved_mode(1);
+    }
+
     # add our RTP ports to transport header response
     my $port_range = $stream->rtp_port_range;
     if($self->interleaved_mode){
@@ -232,50 +248,25 @@ sub setup {
         $self->add_resp_header("Transport", "$transport;server_port=$port_range");
     }
 
-    if($self->interleaved_mode){
-        my($name, $alias, $udp_proto) = AnyEvent::Socket::getprotobyname('udp');
-
-        # create UDP socket for internal packet stream
-        socket my($sock), $self->addr_family, SOCK_DGRAM, $udp_proto;
-        AnyEvent::Util::fh_nonblocking $sock, 1;
-        my $dest;
-        if($self->addr_family == AF_INET){
-            $dest = sockaddr_in($stream->rtp_start_port, Socket::inet_aton("localhost"));
-        }else{
-            $dest = sockaddr_in6($stream->rtp_start_port, Socket6::inet_pton(AF_INET6, "localhost"));
-        }
-        unless (connect $sock, $dest){
-            return $self->bad_request;
-        }
-        $self->channel_sockets->{$chan[0] . ""} = $sock;
-
-        # create UDP socket for internal RTCP packet stream
-        socket my($sock_rtcp), $self->addr_family, SOCK_DGRAM, $udp_proto;
-        AnyEvent::Util::fh_nonblocking $sock_rtcp, 1;
-        if($self->addr_family == AF_INET){
-            $dest = sockaddr_in($stream->build_rtp_end_port, Socket::inet_aton("localhost"));
-        }else{
-            $dest = sockaddr_in6($stream->build_rtp_end_port, Socket6::inet_pton("localhost"));
-        }
-        unless(connect $sock, $dest){
-            return $self->bad_request;
-        }
-        $self->channel_sockets->{$chan[1] . ""} = $sock_rtcp;
-    }
-
     $self->push_ok;
 }
 
 sub write_interleaved_rtp
 {
     my ($self, $chan, $data) = @_;
-    my $sock;
-    unless(exists($self->channel_sockets->{$chan . ""})){
-        return 0;
-    }
-    $sock = $self->channel_sockets->{$chan . ""};
 
-    return send $sock, $data, 0;
+    unless(exists($self->interleaved_streamid->{$chan . ""})){
+        return;
+    }
+    my $stream_id = $self->interleaved_streamid->{$chan . ""};
+
+    my $mount = $self->get_mount($self->mount_path_key)
+        or return;
+
+    my $stream = $mount->get_stream($stream_id)
+        or return;
+    $stream->broadcast($data);
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;
