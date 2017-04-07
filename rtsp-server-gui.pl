@@ -7,7 +7,7 @@ use lib 'lib';
 use AnyEvent;
 use RTSP::Server;
 
-use RTSP::GUI;
+use Interface::GUI::Win32;
 
 # you may pass your own options in here or via command-line
 my $srv = RTSP::Server->new_with_options(
@@ -22,8 +22,8 @@ $srv->listen;
 # main loop
 my $cv = AnyEvent->condvar;
 
-my $gui = RTSP::GUI->new;
-$gui->close_event(\&close_event);
+my $gui = Interface::GUI::Win32->new;
+$gui->window_terminate_callback(\&close_event);
 $gui->open;
 
 # end if interrupt
@@ -31,7 +31,11 @@ $SIG{INT} = sub {
     $cv->send;
 };
 
+my $count = 0;
+
 $cv->recv;
+
+$gui->close;
 
 sub close_event {
 	$cv->send;
@@ -39,13 +43,14 @@ sub close_event {
 }
 
 sub add_source_update_callback{
-    my ($path) = @_;
-    print("Add mount point " . $path . "\n");
+    my ($mount) = @_;
+    $count++;
+    $gui->add_application($mount, $count);
     return;
 }
 
 sub remove_source_update_callback{
     my ($path) = @_;
-    print("Remove mount point " . $path . "\n");
+    $gui->remove_application($path, $count);
     return;
 }

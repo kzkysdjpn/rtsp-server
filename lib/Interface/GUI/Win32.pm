@@ -187,10 +187,15 @@ sub open_gui_widget {
 	$self->mount_list_view->InsertColumn(-item => 4, -text => "Cnt.", -width => 33);
 	$self->mount_list_view->Select(-1);
 
+	# Get local IP
+	my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
+	$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
+	$DB::single=1;
+
 	$self->server_address_textfield(
 		$self->main_window->AddTextfield(
 			-name => "ServerAddressTextfield",
-			-text => "&Server Address Textfield",
+			-text => $local_addrs[0],
 			-top => 520,
 			-left => 2,
 			-width => 488,
@@ -202,6 +207,7 @@ sub open_gui_widget {
 		)
 	);
 	$self->main_window->Hook(WM_USER, \&on_request_hook);
+
 	$self->main_window->Show();
 	Win32::GUI::Dialog();
 	exit(0);
@@ -214,7 +220,7 @@ sub on_request_hook {
 	my $result = thaw $frozen;
 	my $trim_name = substr $$result{APPLICATION}, 1;
 	if($$result{OPS} == 0){
-		$DB::single=1;
+#		$DB::single=1;
 		return;
 	}
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
@@ -222,7 +228,6 @@ sub on_request_hook {
 	$mon += 1;
 	my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
 	my $ret = $self->AppListView->InsertItem(-text => [$trim_name, $$result{HOST}, $date, "", $$result{COUNT}]);
-	$DB::single=1;
 	return;
 }
 

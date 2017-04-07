@@ -147,7 +147,7 @@ sub record {
     if ($self->start_rtp_server) {
         $self->push_ok;
         $mount->mounted(1);
-	$mount->source_host($self->local_address);
+	$mount->source_host($self->client_address . ":" . $self->client_port);
         $self->server->add_source_update_callback->($mount);
     } else {
         $self->not_found;
