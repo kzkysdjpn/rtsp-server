@@ -14,7 +14,7 @@ has 'main_window' => (
 	is => 'rw',
 );
 
-has 'mount_list_view' => (
+has 'app_list_view' => (
 	is => 'rw',
 );
 
@@ -78,7 +78,12 @@ has 'local_control_socket' => (
 
 has 'vlc_directory_path' => (
 	is => 'rw',
-	default => 'C:\\PROGRA~1\\VideoLAN\\VLC\\',
+	default => 'C:\\PROGRA~2\\VideoLAN\\VLC\\',
+);
+
+has 'rtsp_client_bind_port' => (
+	is => 'rw',
+	default => 5544,
 );
 
 sub open {
@@ -147,7 +152,7 @@ sub open_gui_widget {
 		},
 	));
 
-	$self->mount_list_view(
+	$self->app_list_view(
 		$self->main_window->AddListView(
 			-name => "AppListView",
 			-text => "&App List View",
@@ -171,26 +176,26 @@ sub open_gui_widget {
 				}
 #				$DB::single=1;
 				system("taskkill /im vlc.exe");
-				system("start " . $self->{vlc_directory_path} . "vlc.exe");
-				print "onClick() " . $self->GetItemText($index, 2) . "\n";
+				system("start " . $self->{vlc_directory_path} . "vlc.exe rtsp://localhost:" . $self->{rtsp_client_bind_port} . "/" . $self->GetItemText($index, 0));
 				return;
 			},
 		)
 	);
 
-	$self->mount_list_view->{vlc_directory_path} = $self->vlc_directory_path;
+	$self->app_list_view->{vlc_directory_path} = $self->vlc_directory_path;
+	$self->app_list_view->{rtsp_client_bind_port} = $self->rtsp_client_bind_port;
 
-	$self->mount_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
-	$self->mount_list_view->InsertColumn(-item => 1, -text => "Host Addr.", -width => 150);
-	$self->mount_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 150);
-	$self->mount_list_view->InsertColumn(-item => 3, -text => "Rec.", -width => 50);
-	$self->mount_list_view->InsertColumn(-item => 4, -text => "Cnt.", -width => 33);
-	$self->mount_list_view->Select(-1);
+	$self->app_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
+	$self->app_list_view->InsertColumn(-item => 1, -text => "Host Addr.", -width => 150);
+	$self->app_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 150);
+	$self->app_list_view->InsertColumn(-item => 3, -text => "Rec.", -width => 50);
+	$self->app_list_view->InsertColumn(-item => 4, -text => "Cnt.", -width => 33);
+	$self->app_list_view->Select(-1);
 
 	# Get local IP
 	my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
 	$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
-	$DB::single=1;
+#	$DB::single=1;
 
 	$self->server_address_textfield(
 		$self->main_window->AddTextfield(
@@ -219,10 +224,21 @@ sub on_request_hook {
 	my $frozen = unpack("P$len", pack('Q', $data));
 	my $result = thaw $frozen;
 	my $trim_name = substr $$result{APPLICATION}, 1;
-	if($$result{OPS} == 0){
-#		$DB::single=1;
+
+	if($$result{OPS} == 0){ # Remove application process.
+		my $find_item = $self->AppListView->FindItem(
+			-1,
+			-string => $trim_name,
+		);
+		if ($find_item < 0){
+			return;
+		}
+		$self->AppListView->DeleteItem($find_item);
+		$DB::single=1;
 		return;
 	}
+
+	# Add application process.
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	$year += 1900;
 	$mon += 1;
