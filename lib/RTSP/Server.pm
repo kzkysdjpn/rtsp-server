@@ -17,7 +17,7 @@ our $RTP_START_PORT = 20_000;
 has 'client_listen_port' => (
     is => 'rw',
     isa => 'Int',
-    default => '554',
+    default => '5544',
     cmd_flag => 'clientport',
     cmd_aliases => 'c',
     metaclass => 'MooseX::Getopt::Meta::Attribute',
@@ -228,7 +228,7 @@ audio/video streams.
   my $srv = new RTSP::Server(
       log_level             => 2,   # 0 = no output, 5 = most verbose
       max_clients           => 100,
-      client_listen_port    => 554,
+      client_listen_port    => 5544,
       source_listen_port    => 5545,
       rtp_start_port        => 20000,
       client_listen_address => '0.0.0.0',

@@ -132,9 +132,9 @@ sub open_gui_widget {
 		-text => $self->main_window_title,
 		-menu => $menu,
 		-top => 60,
-		-left => 900,
-		-width => 400,
-		-height => 580,
+		-left => 60,
+		-width => 500,
+		-height => 600,
 		-resizable => 0,
 		-hasmaximize => 0,
 		-maximizebox => 0,
@@ -154,19 +154,22 @@ sub open_gui_widget {
 			-top => 0,
 			-left => 2,
 			-vscroll => 1,
-			-width => 388,
-			-height => 500,
+			-width => 488,
+			-height => 520,
 			-multisel => 0,
 			-gridlines => 1,
 			-fullrowselect => 1,
 			-onClick => sub {
+				return;
+			},
+			-onMouseDblClick => sub {
 				my ($self) = @_;
 				my $index;
 				$index = $self->SelectedItems();
 				unless (defined $index){
 					return;
 				}
-				$DB::single=1;
+#				$DB::single=1;
 				system("taskkill /im vlc.exe");
 				system("start " . $self->{vlc_directory_path} . "vlc.exe");
 				print "onClick() " . $self->GetItemText($index, 2) . "\n";
@@ -178,21 +181,22 @@ sub open_gui_widget {
 	$self->mount_list_view->{vlc_directory_path} = $self->vlc_directory_path;
 
 	$self->mount_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
-	$self->mount_list_view->InsertColumn(-item => 1, -text => "Host Address", -width => 100);
-	$self->mount_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 100);
-	$self->mount_list_view->InsertColumn(-item => 3, -text => "Count", -width => 88);
+	$self->mount_list_view->InsertColumn(-item => 1, -text => "Host Addr.", -width => 150);
+	$self->mount_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 150);
+	$self->mount_list_view->InsertColumn(-item => 3, -text => "Rec.", -width => 50);
+	$self->mount_list_view->InsertColumn(-item => 4, -text => "Cnt.", -width => 33);
 	$self->mount_list_view->Select(-1);
 
 	$self->server_address_textfield(
 		$self->main_window->AddTextfield(
 			-name => "ServerAddressTextfield",
 			-text => "&Server Address Textfield",
-			-top => 500,
+			-top => 520,
 			-left => 2,
-			-width => 388,
+			-width => 488,
 			-height => 34,
 			-align => 'center',
-			-readonly => 0,
+			-readonly => 1,
 			-valign => 'center',
 			-wantreturn => 0,
 		)
@@ -208,6 +212,17 @@ sub on_request_hook {
 	my ($self, $len, $data) = @_;
 	my $frozen = unpack("P$len", pack('Q', $data));
 	my $result = thaw $frozen;
+	my $trim_name = substr $$result{APPLICATION}, 1;
+	if($$result{OPS} == 0){
+		$DB::single=1;
+		return;
+	}
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	$year += 1900;
+	$mon += 1;
+	my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
+	my $ret = $self->AppListView->InsertItem(-text => [$trim_name, $$result{HOST}, $date, "", $$result{COUNT}]);
+	$DB::single=1;
 	return;
 }
 
@@ -222,7 +237,7 @@ sub clear_application {
 }
 
 sub add_application {
-	my ($self, $application, $remote_addr, $count) = @_;
+	my ($self, $mount, $count) = @_;
 
 	my $window = Win32::GUI::FindWindow('', $self->main_window_title);
 	my $data = {
@@ -230,8 +245,8 @@ sub add_application {
 		# 0 - Remove Application
 		# 1 - Add Application
 		"OPS" => 1,
-		"APPLICATION" => $application,
-		"HOST" => $remote_addr,
+		"APPLICATION" => $mount->path,
+		"HOST" => $mount->source_host,
 		"COUNT" => $count,
 	};
 	my $frozen = nfreeze $data;
@@ -240,7 +255,7 @@ sub add_application {
 }
 
 sub remove_application {
-	my ($self, $application, $remote_addr, $count) = @_;
+	my ($self, $app_path, $count) = @_;
 
 	my $window = Win32::GUI::FindWindow('', $self->main_window_title);
 	my $data = {
@@ -248,8 +263,8 @@ sub remove_application {
 		# 0 - Remove Application
 		# 1 - Add Application
 		"OPS" => 0,
-		"APPLICATION" => $application,
-		"HOST" => $remote_addr,
+		"APPLICATION" => $app_path,
+		"HOST" => "",
 		"COUNT" => $count,
 	};
 	my $frozen = nfreeze $data;

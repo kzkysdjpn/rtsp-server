@@ -26,6 +26,12 @@ has 'mounted' => (
     default => 0,
 );
 
+has 'source_host' => (
+    is => 'rw',
+    isa => 'Str',
+    default => "",
+);
+
 # map of stream_id -> stream
 has '_streams' => (
     is => 'rw',
