@@ -8,6 +8,12 @@ use AnyEvent;
 use RTSP::Server;
 
 use Interface::GUI::Win32;
+use Interface::ConfigFile;
+
+my $config = Interface::ConfigFile->new;
+
+$config->open;
+$config->close;
 
 # you may pass your own options in here or via command-line
 my $srv = RTSP::Server->new_with_options(
