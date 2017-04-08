@@ -1,0 +1,9 @@
+{
+	"INITIAL_LOAD"           : false,
+	"RTSP_SOURCE_PORT"       : 5545,
+	"RTSP_CLIENT_PORT"       : 5544,
+	"ON_DBLCLICK_VLC_PATH"   : "C:\\PROGRA~2\\VideoLAN\\VLC\\",
+	"ON_RECEIVE_FFMPEG_PATH" : "C:\\ffmpeg\\",
+	"ON_REC_FILE_PATH"       : "C:\\rtsp_rec_data\\",
+	"RTP_START_PORT"         : "6970"
+}
