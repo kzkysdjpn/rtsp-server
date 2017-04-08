@@ -53,10 +53,16 @@ sub close {
 
 sub setting_value {
 	my ($self) = @_;
-#	return $self->config_data{$self->key_name};
+	return $self->config_data->{$self->key_name};
 }
 
 sub set_setting_value {
 	my ($self, $value) = @_;
 	return $self->value($value);
 }
+
+__PACKAGE__->meta->make_immutable;
+
+__END__
+
+=head1 NAME

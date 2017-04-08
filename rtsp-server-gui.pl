@@ -12,7 +12,10 @@ use Interface::ConfigFile;
 
 my $config = Interface::ConfigFile->new;
 
-$config->open;
+unless ( $config->open ){
+	print STDERR ("Invalid configuration.\n");
+	exit(0);
+}
 $config->close;
 
 # you may pass your own options in here or via command-line
