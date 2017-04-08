@@ -14,6 +14,10 @@ has 'main_window' => (
 	is => 'rw',
 );
 
+has 'setting_dialog' => (
+	is => 'rw',
+);
+
 has 'app_list_view' => (
 	is => 'rw',
 );
@@ -115,9 +119,25 @@ sub open {
 sub open_gui_widget {
 	my ($self) = @_;
 
+	# Setup Setting Dialog.
+	setup_setting_dialog(@_);
+
+	# Setup RTSP Server Main Window.
+	setup_main_window(@_);
+
+	$self->main_window->{setting_dialog} = $self->setting_dialog;
+	$self->main_window->Show();
+	Win32::GUI::Dialog();
+	exit(0);
+
+	return;
+}
+
+sub setup_main_window {
+	my ($self) = @_;
 	my $menu = Win32::GUI::Menu->new(
 		"&File"     =>            "File",
-		">&Setting\tCtrl-S"     => { -name => "Source",  -onClick => \&showSetting },
+		">&Setting\tCtrl-S"     => { -name => "Source",  -onClick => \&open_setting_dialog },
 		">-"        => 0,
 		">E&xit"    => { -name => "Exit",    -onClick => sub {
 			socket my ($sock), AF_INET, SOCK_DGRAM, 0;
@@ -198,24 +218,75 @@ sub open_gui_widget {
 #	$DB::single=1;
 
 	$self->server_address_textfield(
-		$self->main_window->AddTextfield(
-			-name => "ServerAddressTextfield",
-			-text => $local_addrs[0],
-			-top => 520,
+		$self->main_window->AddButton(
+			-name => "LocalIPViewButton",
+			-text => "Local PC IP is " . $local_addrs[0],
+			-top => 524,
 			-left => 2,
 			-width => 488,
-			-height => 34,
+			-height => 32,
 			-align => 'center',
-			-readonly => 1,
 			-valign => 'center',
-			-wantreturn => 0,
+			-onClick => sub {
+				my ($self) = @_;
+				# Get local IP
+				my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
+				$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
+				$self->Text("Local PC IP is " . $local_addrs[0]);
+				$DB::single=1;
+				return;
+			},
 		)
 	);
 	$self->main_window->Hook(WM_USER, \&on_request_hook);
+	return;
+}
 
-	$self->main_window->Show();
-	Win32::GUI::Dialog();
-	exit(0);
+sub open_setting_dialog {
+	my ($self) = @_;
+	$self->{setting_dialog}->DoModal();
+	return;
+}
+
+sub setup_setting_dialog {
+	my ($self) = @_;
+	$self->setting_dialog(Win32::GUI::Window->new(
+		-name => 'Setting',
+		-title => 'RTSP-Server Setting',
+		-text => 'RTSP-Server Setting',
+		-top => 60,
+		-left => 60,
+		-width => 500,
+		-height => 600,
+		-resizable => 0,
+		-hasmaximize => 0,
+		-maximizebox => 0,
+		-hasminimize => 0,
+		-minimizebox => 0,
+		-sizable => 0,
+		-parent => $self->main_window,
+	));
+	$self->setting_dialog->AddButton(
+		-name => "SettingViewCancelButton",
+		-text => "Cancel",
+		-top => 554,
+		-left => 2,
+		-width => 244,
+		-onClick => sub {
+			-1;
+		},
+	);
+	$self->setting_dialog->AddButton(
+		-name => "SettingViewApplyButton",
+		-text => "Apply",
+		-top => 554,
+		-left => 248,
+		-width => 242,
+		-onClick => sub {
+			-1;
+		},
+	);
+
 	return;
 }
 
