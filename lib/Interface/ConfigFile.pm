@@ -15,12 +15,6 @@ has 'key_name' => (
 	default => '',
 );
 
-has 'value' => (
-	is => 'rw',
-	isa => 'Str',
-	default => '',
-);
-
 has 'config_data' => (
 	is => 'rw',
 	isa => 'HashRef',
@@ -42,12 +36,17 @@ sub open {
 		return 0;
 	}
 	$self->config_data($data);
-	$DB::single=1;
 	return 1;
 }
 
 sub close {
 	my ($self) = @_;
+	return;
+}
+
+sub set_key_name {
+	my ($self, $key_name) = @_;
+	$self->key_name($key_name);
 	return;
 }
 
@@ -58,7 +57,8 @@ sub setting_value {
 
 sub set_setting_value {
 	my ($self, $value) = @_;
-	return $self->value($value);
+	$self->config_data->{$self->key_name} = $value;
+	return;
 }
 
 __PACKAGE__->meta->make_immutable;

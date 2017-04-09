@@ -2,8 +2,11 @@
 	"INITIAL_LOAD"           : false,
 	"RTSP_SOURCE_PORT"       : 5545,
 	"RTSP_CLIENT_PORT"       : 5544,
-	"ON_DBLCLICK_VLC_PATH"   : "C:\\PROGRA~2\\VideoLAN\\VLC\\",
-	"ON_RECEIVE_FFMPEG_PATH" : "C:\\ffmpeg\\",
-	"ON_REC_FILE_PATH"       : "C:\\rtsp_rec_data\\",
-	"RTP_START_PORT"         : "6970"
+	"ON_DBLCLICK_VLC_DIR"    : "C:\\PROGRA~2\\VideoLAN\\VLC\\",
+	"ON_RECEIVE_FFMPEG_DIR"  : "C:\\ffmpeg\\bin\\",
+	"RECORD_FILE_PATH"       : "C:\\rtsp_rec_data\\",
+	"RTP_START_PORT"         : "6970",
+	"USE_SOURCE_AUTH"        : false,
+	"SOURCE_AUTH_USERNAME"   : "username",
+	"SOURCE_AUTH_PASSWORD"   : "password"
 }

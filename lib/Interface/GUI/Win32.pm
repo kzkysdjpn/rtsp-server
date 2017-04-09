@@ -266,12 +266,180 @@ sub setup_setting_dialog {
 		-sizable => 0,
 		-parent => $self->main_window,
 	));
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewSourcePortLabel",
+		-text   => "RTSP Source Port",
+		-left   => 2,
+		-top    => 12,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewSourcePortTextfield",
+		-text   => "",
+		-left   => 186,
+		-top    => 12,
+		-width  => 304,
+		-height => 32,
+		-valign => 'center',
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewVLCDirectoryLabel",
+		-text   => "On Double Click VLC Directory",
+		-left   => 2,
+		-top    => 48,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewVLCDirectoryText",
+		-text   => "",
+		-left   => 186,
+		-top    => 48,
+		-width  => 262,
+		-height => 32,
+		-valign => 'center',
+	);
 	$self->setting_dialog->AddButton(
-		-name => "SettingViewCancelButton",
+		-name   => "SettingViewVLCDirectoryButton",
+		-text   => "...",
+		-left   => 452,
+		-top    => 48,
+		-width  => 36,
+		-height => 32,
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewFFMPEGDirectoryLabel",
+		-text   => "On Receive FFMPEG Directory",
+		-left   => 2,
+		-top    => 84,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewFFMPEGDirectoryText",
+		-text   => "",
+		-left   => 186,
+		-top    => 84,
+		-width  => 262,
+		-height => 32,
+		-valign => 'center',
+	);
+	$self->setting_dialog->AddButton(
+		-name   => "SettingViewFFMPEGDirectoryButton",
+		-text   => "...",
+		-left   => 452,
+		-top    => 84,
+		-width  => 36,
+		-height => 32,
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewRecordFileDirectoryLabel",
+		-text   => "Record File Directory",
+		-left   => 2,
+		-top    => 120,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewRecordFileDirectoryText",
+		-text   => "",
+		-left   => 186,
+		-top    => 120,
+		-width  => 262,
+		-height => 32,
+		-valign => 'center',
+	);
+	$self->setting_dialog->AddButton(
+		-name   => "SettingViewRecordFileDirectoryButton",
+		-text   => "...",
+		-left   => 452,
+		-top    => 120,
+		-width  => 36,
+		-height => 32,
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewRTPStartPortLabel",
+		-text   => "RTP Start Port",
+		-left   => 2,
+		-top    => 156,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewRTPStartPortText",
+		-text   => "",
+		-left   => 186,
+		-top    => 156,
+		-width  => 304,
+		-height => 32,
+		-valign => 'center',
+	);
+
+	$self->setting_dialog->AddCheckbox(
+		-name   => "SettingViewUseSourceAuthCheckBox",
+		-text   => "Use Source Authentication",
+		-left   => 2,
+		-top    => 192,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewSourceAuthUserNameLabel",
+		-text   => "Source User Name",
+		-left   => 2,
+		-top    => 228,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewSourceAuthUserNameText",
+		-text   => "",
+		-left   => 186,
+		-top    => 228,
+		-width  => 304,
+		-height => 32,
+		-valign => 'center',
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SettingViewSourceAuthPasswordLabel",
+		-text   => "Source Password",
+		-left   => 2,
+		-top    => 264,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	$self->setting_dialog->AddTextfield(
+		-name   => "SettingViewSourceAuthPasswordText",
+		-text   => "",
+		-left   => 186,
+		-top    => 264,
+		-width  => 304,
+		-height => 32,
+		-valign => 'center',
+	);
+
+	$self->setting_dialog->AddButton(
+		-name => "SettingView",
 		-text => "Cancel",
-		-top => 554,
+		-top => 538,
 		-left => 2,
 		-width => 244,
+		-height => 32,
 		-onClick => sub {
 			-1;
 		},
@@ -279,9 +447,10 @@ sub setup_setting_dialog {
 	$self->setting_dialog->AddButton(
 		-name => "SettingViewApplyButton",
 		-text => "Apply",
-		-top => 554,
+		-top => 538,
 		-left => 248,
 		-width => 242,
+		-height => 32,
 		-onClick => sub {
 			-1;
 		},
