@@ -10,14 +10,13 @@ use RTSP::Server;
 use Interface::GUI::Win32;
 use Interface::ConfigFile;
 
-my $config = Interface::ConfigFile->new;
-
-unless ( $config->open ){
-	print STDERR ("Invalid configuration.\n");
-	exit(0);
-}
-$config->close;
-$config = undef;
+#my $config = Interface::ConfigFile->new;
+#unless ( $config->open ){
+#	print STDERR ("Invalid configuration.\n");
+#	exit(0);
+#}
+#$config->close;
+#$config = undef;
 
 # you may pass your own options in here or via command-line
 my $srv = RTSP::Server->new_with_options(

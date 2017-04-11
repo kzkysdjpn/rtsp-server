@@ -29,17 +29,18 @@ sub open {
 		return 0;
 	}
 	my $data;
+	my $tmp;
+	my $json;
 	eval {
 		local $/ = undef;
-		my $json = <$fh>;
+		$json = <$fh>;
 		close $fh;
-		my $tmp = Encode::encode('utf8', decode('sjis', $json));
-		$DB::single=1;
+		$tmp = Encode::encode('utf8', decode('sjis', $json));
 		$data = decode_json($tmp);
 	};
 	if($@){
-		$DB::single=1;
-		print STDERR ("Invalid JSON decode peration.\n");
+		print STDERR ("Invalid JSON decode operation." . $@ .  "\n");
+		print $tmp . " / " . $json . "\n";
 		return 0;
 	}
 	$self->config_data($data);

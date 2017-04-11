@@ -136,6 +136,7 @@ sub open_gui_widget {
 
 	$self->main_window->{config_data_fetch_callback} = $self->config_data_fetch_callback;
 	$self->main_window->{setting_dialog} = $self->setting_dialog;
+
 	$self->main_window->Show();
 	Win32::GUI::Dialog();
 	exit(0);
@@ -257,6 +258,7 @@ sub open_setting_dialog {
 	my $config_hash;
 	$config_hash = $self->{config_data_fetch_callback}->();
 	$DB::single=1;
+
 	$self->{setting_dialog}->DoModal();
 	return;
 }
