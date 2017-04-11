@@ -113,7 +113,29 @@ sub open {
 		fh => $sock,
 		poll => 'r',
 		cb => sub {
-			$self->window_terminate_callback->();
+			my $buf;
+			my $len;
+			my $sender_addr = recv $sock, $buf, 2048, 0;
+			unless ( defined $sender_addr ){
+				return;
+			}
+			next unless $buf;
+			my @callback = (
+				undef,
+				$self->window_terminate_callback,
+			);
+			my $result = thaw $buf;
+			$len = $#callback;
+			unless ( defined $result->{APP_CTL_OPS} ){
+				return;
+			}
+			if( $result->{APP_CTL_OPS} < 0 ){
+				return;
+			}
+			if ( $len < $result->{APP_CTL_OPS} ){
+				return;
+			}
+			$callback[$result->{APP_CTL_OPS}]->();
 			return;
 		}
 	);
@@ -144,23 +166,36 @@ sub open_gui_widget {
 	return;
 }
 
+sub do_terminate_app {
+	my ($self) = @_;
+	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
+	my $sock_addr = pack_sockaddr_in($self->{local_control_port} + 0,
+						Socket::inet_aton("localhost"));
+	my $data = {
+		# Arbitary Defined
+		# 0 - Fetch Configuration
+		# 1 - Terminate App
+		"APP_CTL_OPS" => 1,
+	};
+	my $frozen = nfreeze $data;
+	send($sock, $frozen, 0, $sock_addr);
+	shutdown $sock, 2;
+	-1;
+}
+
 sub setup_main_window {
 	my ($self) = @_;
 	my $menu = Win32::GUI::Menu->new(
 		"&File"     =>            "File",
 		">&Setting\tCtrl-S"     => { -name => "Source",  -onClick => \&open_setting_dialog },
 		">-"        => 0,
-		">E&xit"    => { -name => "Exit",    -onClick => sub {
-			socket my ($sock), AF_INET, SOCK_DGRAM, 0;
-			my $sock_addr = pack_sockaddr_in($self->local_control_port, Socket::inet_aton("localhost"));
-			send($sock, "terminate\n", 0, $sock_addr);
-			shutdown $sock, 2;
-			-1
-		},},
+		">E&xit"    => { -name => "Exit",    -onClick => \&do_terminate_app,},
 		"&Help"     =>            "HelpB",
 		">&Help\tF1"           => { -name => "Help",    -onClick => \&showHelp, },
 		">&About..."           => { -name => "About",   -onClick => \&showAboutBox, },
 	);
+	$menu->{local_control_port} = $self->local_control_port;
+	$menu->{handle} = $self;
 
 	$self->main_window(Win32::GUI::Window->new(
 		-name => 'Main',
@@ -174,14 +209,9 @@ sub setup_main_window {
 		-resizable => 0,
 		-hasmaximize => 0,
 		-maximizebox => 0,
-		-onTerminate => sub {
-			socket my ($sock), AF_INET, SOCK_DGRAM, 0;
-			my $sock_addr = pack_sockaddr_in($self->local_control_port, Socket::inet_aton("localhost"));
-			send($sock, "terminate\n", 0, $sock_addr);
-			shutdown $sock, 2;
-			-1;
-		},
+		-onTerminate => \&do_terminate_app,
 	));
+	$self->main_window->{local_control_port} = $self->local_control_port;
 
 	$self->app_list_view(
 		$self->main_window->AddListView(
@@ -244,7 +274,6 @@ sub setup_main_window {
 				my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
 				$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
 				$self->Text("Local PC IP is " . $local_addrs[0]);
-				$DB::single=1;
 				return;
 			},
 		)
@@ -256,9 +285,20 @@ sub setup_main_window {
 sub open_setting_dialog {
 	my ($self) = @_;
 	my $config_hash;
+	my @avoid_field = (
+		"INITIAL_LOAD",
+		"USE_SOURCE_AUTH",
+	);
 	$config_hash = $self->{config_data_fetch_callback}->();
-	$DB::single=1;
-
+	foreach my $key(keys(%{$config_hash})){
+		if(grep { $_ eq $key } @avoid_field ){
+			next;
+		}
+		my $widget = $self->{setting_dialog}->$key;
+		$widget->Text = $config_hash->{$key};
+		$DB::single=1;
+		print $config_hash->{$key} . "\n";
+	}
 	$self->{setting_dialog}->DoModal();
 	return;
 }
@@ -291,7 +331,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewSourcePortTextfield",
+		-name   => "RTSP_SOURCE_PORT",
 		-text   => "",
 		-left   => 186,
 		-top    => 12,
@@ -310,7 +350,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewVLCDirectoryText",
+		-name   => "ON_DBLCLICK_VLC_DIR",
 		-text   => "",
 		-left   => 186,
 		-top    => 48,
@@ -337,7 +377,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewFFMPEGDirectoryText",
+		-name   => "ON_RECEIVE_FFMPEG_DIR",
 		-text   => "",
 		-left   => 186,
 		-top    => 84,
@@ -364,7 +404,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewRecordFileDirectoryText",
+		-name   => "RECORD_FILE_PATH",
 		-text   => "",
 		-left   => 186,
 		-top    => 120,
@@ -391,7 +431,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewRTPStartPortText",
+		-name   => "RTP_START_PORT",
 		-text   => "",
 		-left   => 186,
 		-top    => 156,
@@ -420,7 +460,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewSourceAuthUserNameText",
+		-name   => "SOURCE_AUTH_USERNAME",
 		-text   => "",
 		-left   => 186,
 		-top    => 228,
@@ -439,7 +479,7 @@ sub setup_setting_dialog {
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "SettingViewSourceAuthPasswordText",
+		-name   => "SOURCE_AUTH_PASSWORD",
 		-text   => "",
 		-left   => 186,
 		-top    => 264,
@@ -489,7 +529,6 @@ sub on_request_hook {
 			return;
 		}
 		$self->AppListView->DeleteItem($find_item);
-		$DB::single=1;
 		return;
 	}
 

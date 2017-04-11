@@ -1,7 +1,7 @@
 package Interface::ConfigFile;
 
 use Moose;
-use JSON;
+use JSON::PP;
 use Encode;
 
 has 'config_file_path' => (
@@ -36,7 +36,7 @@ sub open {
 		$json = <$fh>;
 		close $fh;
 		$tmp = Encode::encode('utf8', decode('sjis', $json));
-		$data = decode_json($tmp);
+		$data = JSON::PP::decode_json($tmp);
 	};
 	if($@){
 		print STDERR ("Invalid JSON decode operation." . $@ .  "\n");
