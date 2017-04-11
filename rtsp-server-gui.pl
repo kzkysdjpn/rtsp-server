@@ -17,6 +17,7 @@ unless ( $config->open ){
 	exit(0);
 }
 $config->close;
+$config = undef;
 
 # you may pass your own options in here or via command-line
 my $srv = RTSP::Server->new_with_options(
@@ -32,6 +33,17 @@ $srv->listen;
 my $cv = AnyEvent->condvar;
 
 my $gui = Interface::GUI::Win32->new;
+$gui->config_data_fetch_callback(sub {
+	my $fetch_config;
+	my $config_hash;
+	$fetch_config = Interface::ConfigFile->new;
+	unless ( $fetch_config->open ){
+		print STDERR ("Invalid configuration.\n");
+		return undef;
+	}
+	$config_hash = $fetch_config->config_data;
+	return $config_hash;
+});
 $gui->window_terminate_callback(\&close_event);
 $gui->open;
 

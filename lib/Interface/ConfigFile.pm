@@ -4,7 +4,7 @@ use Moose;
 use JSON;
 use Encode;
 
-has 'config_file_Path' => (
+has 'config_file_path' => (
 	is => 'rw',
 	default => 'C:\\perl_test\\rtsp-server\\rtsp-server.json',
 );
@@ -23,16 +23,23 @@ has 'config_data' => (
 
 sub open {
 	my ($self) = @_;
-	open ( my $fh, '<', $self->config_file_Path) || return 0;
+	my $fh;
+	unless (open ($fh, '<', $self->config_file_path)){
+		print STDERR ("Invalid open peration.\n");
+		return 0;
+	}
 	my $data;
 	eval {
 		local $/ = undef;
 		my $json = <$fh>;
 		close $fh;
 		my $tmp = Encode::encode('utf8', decode('sjis', $json));
+		$DB::single=1;
 		$data = decode_json($tmp);
 	};
 	if($@){
+		$DB::single=1;
+		print STDERR ("Invalid JSON decode peration.\n");
 		return 0;
 	}
 	$self->config_data($data);
@@ -59,6 +66,11 @@ sub set_setting_value {
 	my ($self, $value) = @_;
 	$self->config_data->{$self->key_name} = $value;
 	return;
+}
+
+sub config_data_hash {
+	my ($self) = @_;
+	return $self->config_data;
 }
 
 __PACKAGE__->meta->make_immutable;

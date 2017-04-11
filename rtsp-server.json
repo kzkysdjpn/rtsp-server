@@ -5,7 +5,7 @@
 	"ON_DBLCLICK_VLC_DIR"    : "C:\\PROGRA~2\\VideoLAN\\VLC\\",
 	"ON_RECEIVE_FFMPEG_DIR"  : "C:\\ffmpeg\\bin\\",
 	"RECORD_FILE_PATH"       : "C:\\rtsp_rec_data\\",
-	"RTP_START_PORT"         : "6970",
+	"RTP_START_PORT"         : 6970,
 	"USE_SOURCE_AUTH"        : false,
 	"SOURCE_AUTH_USERNAME"   : "username",
 	"SOURCE_AUTH_PASSWORD"   : "password"

@@ -90,6 +90,15 @@ has 'rtsp_client_bind_port' => (
 	default => 5544,
 );
 
+has 'config_data_fetch_callback' => (
+	is => 'rw',
+	default => sub {
+		sub {
+			return;
+		}
+	},
+);
+
 sub open {
 	my ($self) = @_;
 
@@ -125,6 +134,7 @@ sub open_gui_widget {
 	# Setup RTSP Server Main Window.
 	setup_main_window(@_);
 
+	$self->main_window->{config_data_fetch_callback} = $self->config_data_fetch_callback;
 	$self->main_window->{setting_dialog} = $self->setting_dialog;
 	$self->main_window->Show();
 	Win32::GUI::Dialog();
@@ -244,6 +254,9 @@ sub setup_main_window {
 
 sub open_setting_dialog {
 	my ($self) = @_;
+	my $config_hash;
+	$config_hash = $self->{config_data_fetch_callback}->();
+	$DB::single=1;
 	$self->{setting_dialog}->DoModal();
 	return;
 }
