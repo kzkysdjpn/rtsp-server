@@ -288,6 +288,7 @@ sub open_setting_dialog {
 	my @avoid_field = (
 		"INITIAL_LOAD",
 		"USE_SOURCE_AUTH",
+		"RTSP_CLIENT_PORT",
 	);
 	$config_hash = $self->{config_data_fetch_callback}->();
 	foreach my $key(keys(%{$config_hash})){
@@ -295,9 +296,17 @@ sub open_setting_dialog {
 			next;
 		}
 		my $widget = $self->{setting_dialog}->$key;
-		$widget->Text = $config_hash->{$key};
-		$DB::single=1;
-		print $config_hash->{$key} . "\n";
+		$widget->SelectAll;
+		$widget->Clear;
+		$widget->Append($config_hash->{$key});
+	}
+
+	my $key = "USE_SOURCE_AUTH";
+	my $widget = $self->{setting_dialog}->$key;
+	if( $config_hash->{$key} ){
+		$widget->SetCheck(1);
+	}else{
+		$widget->SetCheck(0);
 	}
 	$self->{setting_dialog}->DoModal();
 	return;
@@ -441,7 +450,7 @@ sub setup_setting_dialog {
 	);
 
 	$self->setting_dialog->AddCheckbox(
-		-name   => "SettingViewUseSourceAuthCheckBox",
+		-name   => "USE_SOURCE_AUTH",
 		-text   => "Use Source Authentication",
 		-left   => 2,
 		-top    => 192,
