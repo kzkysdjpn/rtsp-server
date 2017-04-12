@@ -328,6 +328,16 @@ sub open_setting_dialog {
 sub setup_setting_dialog {
 	my ($self) = @_;
 	my $apply_btn;
+	my @setting_fields = (
+		"RTSP_SOURCE_PORT",
+		"ON_DBLCLICK_VLC_DIR",
+		"ON_RECEIVE_FFMPEG_DIR",
+		"RECORD_FILE_PATH",
+		"RTP_START_PORT",
+		"USE_SOURCE_AUTH",
+		"SOURCE_AUTH_USERNAME",
+		"SOURCE_AUTH_PASSWORD",
+	);
 	$self->setting_dialog(Win32::GUI::Window->new(
 		-name => 'Setting',
 		-title => 'RTSP-Server Setting',
@@ -530,14 +540,38 @@ sub setup_setting_dialog {
 		-left => 248,
 		-width => 242,
 		-height => 32,
-		-onClick => sub {
-			my ($self) = @_;
-			$DB::single=1;
-			-1;
-		},
+		-onClick => \&apply_setting,
+	);
+	foreach my $var(@setting_fields){
+		$apply_btn->{$var} = $self->setting_dialog->$var;
+	}
+	$apply_btn->{config_data_fetch_callback} = $self->config_data_fetch_callback;
+	return;
+}
+
+sub apply_setting {
+	my ($self) = @_;
+	my $config_hash;
+	my @setting_fields = (
+		"RTSP_SOURCE_PORT",
+		"ON_DBLCLICK_VLC_DIR",
+		"ON_RECEIVE_FFMPEG_DIR",
+		"RECORD_FILE_PATH",
+		"RTP_START_PORT",
+		"USE_SOURCE_AUTH",
+		"SOURCE_AUTH_USERNAME",
+		"SOURCE_AUTH_PASSWORD",
 	);
 
-	return;
+	$config_hash = $self->{config_data_fetch_callback}->();
+	foreach my $var(@setting_fields){
+		if( $var eq "USE_SOURCE_AUTH" ){
+			next;
+		}
+		$config_hash->{$var} = $self->{$var}->Text();
+	}
+	$DB::single=1;
+	-1;
 }
 
 sub on_request_hook {
