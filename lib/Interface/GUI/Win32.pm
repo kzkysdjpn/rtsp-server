@@ -80,9 +80,19 @@ has 'local_control_socket' => (
 	is => 'rw',
 );
 
-has 'vlc_directory_path' => (
+has 'vlc_dir_path' => (
 	is => 'rw',
 	default => 'C:\\PROGRA~2\\VideoLAN\\VLC\\',
+);
+
+has 'ffmpeg_dir_path' => (
+	is => 'rw',
+	default => 'C:\\ffmpeg\\bin\\',
+);
+
+has 'rec_file_dir_path' => (
+	is => 'rw',
+	default => 'C:\\rtsp_rec_data\\',
 );
 
 has 'rtsp_client_bind_port' => (
@@ -212,6 +222,9 @@ sub setup_main_window {
 		-onTerminate => \&do_terminate_app,
 	));
 	$self->main_window->{local_control_port} = $self->local_control_port;
+	$self->main_window->{ffmpeg_dir_path} = $self->ffmpeg_dir_path;
+	$self->main_window->{rec_file_dir_path} = $self->rec_file_dir_path;
+	$self->main_window->{rtsp_client_bind_port} = $self->rtsp_client_bind_port;
 
 	$self->app_list_view(
 		$self->main_window->AddListView(
@@ -237,13 +250,13 @@ sub setup_main_window {
 				}
 #				$DB::single=1;
 				system("taskkill /im vlc.exe");
-				system("start " . $self->{vlc_directory_path} . "vlc.exe rtsp://localhost:" . $self->{rtsp_client_bind_port} . "/" . $self->GetItemText($index, 0));
+				system("start " . $self->{vlc_dir_path} . "vlc.exe rtsp://localhost:" . $self->{rtsp_client_bind_port} . "/" . $self->GetItemText($index, 0));
 				return;
 			},
 		)
 	);
 
-	$self->app_list_view->{vlc_directory_path} = $self->vlc_directory_path;
+	$self->app_list_view->{vlc_dir_path} = $self->vlc_dir_path;
 	$self->app_list_view->{rtsp_client_bind_port} = $self->rtsp_client_bind_port;
 
 	$self->app_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
@@ -314,6 +327,7 @@ sub open_setting_dialog {
 
 sub setup_setting_dialog {
 	my ($self) = @_;
+	my $apply_btn;
 	$self->setting_dialog(Win32::GUI::Window->new(
 		-name => 'Setting',
 		-title => 'RTSP-Server Setting',
@@ -505,10 +519,11 @@ sub setup_setting_dialog {
 		-width => 244,
 		-height => 32,
 		-onClick => sub {
+			my ($self) = @_;
 			-1;
 		},
 	);
-	$self->setting_dialog->AddButton(
+	$apply_btn = $self->setting_dialog->AddButton(
 		-name => "SettingViewApplyButton",
 		-text => "Apply",
 		-top => 538,
@@ -516,6 +531,8 @@ sub setup_setting_dialog {
 		-width => 242,
 		-height => 32,
 		-onClick => sub {
+			my ($self) = @_;
+			$DB::single=1;
 			-1;
 		},
 	);
@@ -541,13 +558,27 @@ sub on_request_hook {
 		return;
 	}
 
-	# Add application process.
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	$year += 1900;
 	$mon += 1;
+
+	my $pid = on_recoding_ffmpeg($self, $trim_name);
+	# Add application process.
 	my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
-	my $ret = $self->AppListView->InsertItem(-text => [$trim_name, $$result{HOST}, $date, "", $$result{COUNT}]);
+	my $ret = $self->AppListView->InsertItem(-text => [$trim_name, $$result{HOST}, $date, $pid, $$result{COUNT}]);
 	return;
+}
+
+sub on_recoding_ffmpeg {
+	my ($self, $trim_name) = @_;
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	$year += 1900;
+	$mon += 1;
+
+	my $recfile_date = sprintf("%04d%02d%02d%02d%02d%02d" ,$year,$mon,$mday,$hour,$min,$sec);
+	my $exec_ffmpeg = $self->{ffmpeg_dir_path} . "ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:" . $self->{rtsp_client_bind_port} . "/" . $trim_name . " -vcodec copy -acodec copy -sn " . $self->{rec_file_dir_path} . $trim_name . "_" . $recfile_date . ".mp4";
+	my $pid = system(1, "start " . $exec_ffmpeg);
+	return $pid;
 }
 
 sub close {
