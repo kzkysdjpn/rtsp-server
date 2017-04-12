@@ -80,6 +80,9 @@ sub cleanup {
 sub start_rtp_server {
     my ($self) = @_;
 
+    if($self->interleaved_mode){
+        return 1;
+    }
     my $mount = $self->get_mount
         or return;
 
