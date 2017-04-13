@@ -37,11 +37,28 @@ $gui->config_data_fetch_callback(sub {
 	my $config_hash;
 	$fetch_config = Interface::ConfigFile->new;
 	unless ( $fetch_config->open ){
-		print STDERR ("Invalid configuration.\n");
+		print STDERR ("Invalid open config in fetch.\n");
 		return undef;
 	}
 	$config_hash = $fetch_config->config_data;
 	return $config_hash;
+});
+
+$gui->config_data_write_callback(sub {
+	my ($config_hash) = @_;
+	my $write_config;
+	$write_config = Interface::ConfigFile->new;
+	unless ( $write_config->open){
+		print STDERR ("Invalid open config in write.\n");
+		return;
+	}
+	$DB::single=1;
+	$write_config->config_data($config_hash);
+	unless ( $write_config->write ){
+		print STDERR ("Invalid write config operation.\n");
+		return;
+	}
+	return;
 });
 $gui->window_terminate_callback(\&close_event);
 $gui->open;

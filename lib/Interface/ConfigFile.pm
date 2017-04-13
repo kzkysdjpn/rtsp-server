@@ -25,7 +25,7 @@ sub open {
 	my ($self) = @_;
 	my $fh;
 	unless (open ($fh, '<', $self->config_file_path)){
-		print STDERR ("Invalid open peration.\n");
+		print STDERR ("Invalid open peration in open().\n");
 		return 0;
 	}
 	my $data;
@@ -40,7 +40,6 @@ sub open {
 	};
 	if($@){
 		print STDERR ("Invalid JSON decode operation." . $@ .  "\n");
-		print $tmp . " / " . $json . "\n";
 		return 0;
 	}
 	$self->config_data($data);
@@ -69,9 +68,24 @@ sub set_setting_value {
 	return;
 }
 
-sub config_data_hash {
+sub write {
 	my ($self) = @_;
-	return $self->config_data;
+	my $fh;
+	unless (open ($fh, '> ' . $self->config_file_path)){
+		print STDERR ("Invalid open peration in write().\n");
+		return 0;
+	}
+	eval {
+		local $/ = undef;
+		my $json = JSON::PP::encode_json($self->config_data);
+		<$fh> = $json;
+		close $fh;
+	};
+	if($@){
+		print STDERR ("Invalid JSON encode operation." . $@ .  "\n");
+		return 0;
+	}
+	return 1;
 }
 
 __PACKAGE__->meta->make_immutable;

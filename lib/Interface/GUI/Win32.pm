@@ -10,6 +10,8 @@ use Socket;
 use Storable;
 use Storable qw(nfreeze thaw);
 
+use JSON::PP;
+
 has 'main_window' => (
 	is => 'rw',
 );
@@ -101,6 +103,15 @@ has 'rtsp_client_bind_port' => (
 );
 
 has 'config_data_fetch_callback' => (
+	is => 'rw',
+	default => sub {
+		sub {
+			return;
+		}
+	},
+);
+
+has 'config_data_write_callback' => (
 	is => 'rw',
 	default => sub {
 		sub {
@@ -546,6 +557,7 @@ sub setup_setting_dialog {
 		$apply_btn->{$var} = $self->setting_dialog->$var;
 	}
 	$apply_btn->{config_data_fetch_callback} = $self->config_data_fetch_callback;
+	$apply_btn->{config_data_write_callback} = $self->config_data_write_callback;
 	return;
 }
 
@@ -562,7 +574,6 @@ sub apply_setting {
 		"SOURCE_AUTH_USERNAME",
 		"SOURCE_AUTH_PASSWORD",
 	);
-
 	$config_hash = $self->{config_data_fetch_callback}->();
 	foreach my $var(@setting_fields){
 		if( $var eq "USE_SOURCE_AUTH" ){
@@ -570,6 +581,8 @@ sub apply_setting {
 		}
 		$config_hash->{$var} = $self->{$var}->Text();
 	}
+	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
+	$self->{config_data_write_callback}->($config_hash);
 	$DB::single=1;
 	-1;
 }
