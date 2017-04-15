@@ -10,14 +10,11 @@ use RTSP::Server;
 use Interface::GUI::Win32;
 use Interface::ConfigFile;
 
-#my $config = Interface::ConfigFile->new;
-#unless ( $config->open ){
-#	print STDERR ("Invalid configuration.\n");
-#	exit(0);
-#}
-#$config->close;
-#$config = undef;
-
+my $initial_config = Interface::ConfigFile->new;
+unless ( $initial_config->open ){
+	print STDERR ("Invalid configuration.\n");
+	exit(0);
+}
 # you may pass your own options in here or via command-line
 my $srv = RTSP::Server->new_with_options(
 );
@@ -52,7 +49,6 @@ $gui->config_data_write_callback(sub {
 		print STDERR ("Invalid open config in write.\n");
 		return;
 	}
-	$DB::single=1;
 	$write_config->config_data($config_hash);
 	unless ( $write_config->write ){
 		print STDERR ("Invalid write config operation.\n");
@@ -61,6 +57,7 @@ $gui->config_data_write_callback(sub {
 	return;
 });
 $gui->window_terminate_callback(\&close_event);
+$gui->initial_config($initial_config);
 $gui->open;
 
 # end if interrupt
@@ -69,6 +66,9 @@ $SIG{INT} = sub {
 };
 
 my $count = 0;
+
+$initial_config->close;
+$initial_config = undef;
 
 $cv->recv;
 
