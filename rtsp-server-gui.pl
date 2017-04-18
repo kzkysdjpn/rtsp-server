@@ -71,7 +71,6 @@ $initial_config->close;
 $initial_config = undef;
 
 $cv->recv;
-
 $gui->close;
 
 sub close_event {
