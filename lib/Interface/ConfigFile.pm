@@ -24,7 +24,7 @@ has 'config_data' => (
 sub open {
 	my ($self) = @_;
 	my $fh;
-	unless (open ($fh, '<', $self->config_file_path)){
+	unless (CORE::open ($fh, '<', $self->config_file_path)){
 		print STDERR ("Invalid open peration in open().\n");
 		return 0;
 	}
@@ -34,7 +34,7 @@ sub open {
 	eval {
 		local $/ = undef;
 		$json = <$fh>;
-		close $fh;
+		CORE::close $fh;
 		$tmp = Encode::encode('utf8', decode('sjis', $json));
 		$data = JSON::PP::decode_json($tmp);
 	};
@@ -71,15 +71,16 @@ sub set_setting_value {
 sub write {
 	my ($self) = @_;
 	my $fh;
-	unless (open ($fh, '> ' . $self->config_file_path)){
+	unless (CORE::open ($fh, '>', $self->config_file_path)){
 		print STDERR ("Invalid open peration in write().\n");
 		return 0;
 	}
 	eval {
 		local $/ = undef;
 		my $json = JSON::PP::encode_json($self->config_data);
-		<$fh> = $json;
-		close $fh;
+#		<$fh> = $json;
+		print $fh $json;
+		CORE::close $fh;
 	};
 	if($@){
 		print STDERR ("Invalid JSON encode operation." . $@ .  "\n");
