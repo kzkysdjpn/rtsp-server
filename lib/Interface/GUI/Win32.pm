@@ -2,6 +2,7 @@ package Interface::GUI::Win32;
 
 use Moose;
 use Win32::GUI qw( WM_CLOSE WM_USER);
+use Win32;
 use threads;
 
 use AnyEvent::Util;
@@ -84,12 +85,12 @@ has 'local_control_socket' => (
 
 has 'vlc_dir_path' => (
 	is => 'rw',
-	default => 'C:\\PROGRA~2\\VideoLAN\\VLC\\',
+	default => 'C:\\PROGRA~2\\VideoLAN\\VLC\\vlc.exe',
 );
 
 has 'ffmpeg_dir_path' => (
 	is => 'rw',
-	default => 'C:\\ffmpeg\\bin\\',
+	default => 'C:\\ffmpeg\\bin\\ffmpeg.exe',
 );
 
 has 'rec_file_dir_path' => (
@@ -100,6 +101,11 @@ has 'rec_file_dir_path' => (
 has 'rtsp_client_bind_port' => (
 	is => 'rw',
 	default => 5544,
+);
+
+has 'rtsp_source_bind_port' => (
+	is => 'rw',
+	default => 5545,
 );
 
 has 'config_data_fetch_callback' => (
@@ -118,6 +124,14 @@ has 'config_data_write_callback' => (
 			return;
 		}
 	},
+);
+
+has 'initial_config' => (
+	is => 'rw',
+);
+
+has 'setting_cancel' => (
+	is => 'rw',
 );
 
 sub open {
@@ -177,10 +191,10 @@ sub open_gui_widget {
 	# Setup RTSP Server Main Window.
 	setup_main_window(@_);
 
-	$self->main_window->{config_data_fetch_callback} = $self->config_data_fetch_callback;
-	$self->main_window->{setting_dialog} = $self->setting_dialog;
+	unless($self->initial_config->config_data->{INITIAL_LOAD}){
+		open_setting_dialog($self);
+	}
 
-	$self->main_window->Show();
 	Win32::GUI::Dialog();
 	exit(0);
 
@@ -190,7 +204,7 @@ sub open_gui_widget {
 sub do_terminate_app {
 	my ($self) = @_;
 	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
-	my $sock_addr = pack_sockaddr_in($self->{local_control_port} + 0,
+	my $sock_addr = pack_sockaddr_in($self->{gui_handle}->local_control_port + 0,
 						Socket::inet_aton("localhost"));
 	my $data = {
 		# Arbitary Defined
@@ -215,8 +229,6 @@ sub setup_main_window {
 		">&Help\tF1"           => { -name => "Help",    -onClick => \&showHelp, },
 		">&About..."           => { -name => "About",   -onClick => \&showAboutBox, },
 	);
-	$menu->{local_control_port} = $self->local_control_port;
-	$menu->{handle} = $self;
 
 	$self->main_window(Win32::GUI::Window->new(
 		-name => 'Main',
@@ -232,10 +244,7 @@ sub setup_main_window {
 		-maximizebox => 0,
 		-onTerminate => \&do_terminate_app,
 	));
-	$self->main_window->{local_control_port} = $self->local_control_port;
-	$self->main_window->{ffmpeg_dir_path} = $self->ffmpeg_dir_path;
-	$self->main_window->{rec_file_dir_path} = $self->rec_file_dir_path;
-	$self->main_window->{rtsp_client_bind_port} = $self->rtsp_client_bind_port;
+	$self->main_window->{gui_handle} = $self;
 
 	$self->app_list_view(
 		$self->main_window->AddListView(
@@ -255,21 +264,19 @@ sub setup_main_window {
 			-onMouseDblClick => sub {
 				my ($self) = @_;
 				my $index;
+				my $gui_handle;
 				$index = $self->SelectedItems();
 				unless (defined $index){
 					return;
 				}
 #				$DB::single=1;
 				system("taskkill /im vlc.exe");
-				system("start " . $self->{vlc_dir_path} . "vlc.exe rtsp://localhost:" . $self->{rtsp_client_bind_port} . "/" . $self->GetItemText($index, 0));
+				system("start " . $self->{gui_handle}->vlc_dir_path . " rtsp://localhost:" . $self->{gui_handle}->rtsp_client_bind_port . "/" . $self->GetItemText($index, 0));
 				return;
 			},
 		)
 	);
-
-	$self->app_list_view->{vlc_dir_path} = $self->vlc_dir_path;
-	$self->app_list_view->{rtsp_client_bind_port} = $self->rtsp_client_bind_port;
-
+	$self->app_list_view->{gui_handle} = $self;
 	$self->app_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
 	$self->app_list_view->InsertColumn(-item => 1, -text => "Host Addr.", -width => 150);
 	$self->app_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 150);
@@ -280,29 +287,33 @@ sub setup_main_window {
 	# Get local IP
 	my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
 	$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
-#	$DB::single=1;
 
 	$self->server_address_textfield(
 		$self->main_window->AddButton(
 			-name => "LocalIPViewButton",
-			-text => "Local PC IP is " . $local_addrs[0],
+			-text => "Local PC IP is " . $local_addrs[0] . ":" . $self->rtsp_source_bind_port,
 			-top => 524,
 			-left => 2,
 			-width => 488,
 			-height => 32,
 			-align => 'center',
 			-valign => 'center',
-			-onClick => sub {
-				my ($self) = @_;
-				# Get local IP
-				my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
-				$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
-				$self->Text("Local PC IP is " . $local_addrs[0]);
-				return;
-			},
+			-onClick => \&update_address_button,
 		)
 	);
+	$self->server_address_textfield->{gui_handle}	= $self;
+
 	$self->main_window->Hook(WM_USER, \&on_request_hook);
+	$self->main_window->Show();
+	$self->{gui_handle} = $self;
+	return;
+}
+
+sub update_address_button {
+	my ($self) = @_;
+	my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
+	$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
+	$self->Text("Local PC IP is " . $local_addrs[0] . ":" . $self->{gui_handle}->rtsp_source_bind_port);
 	return;
 }
 
@@ -314,25 +325,42 @@ sub open_setting_dialog {
 		"USE_SOURCE_AUTH",
 		"RTSP_CLIENT_PORT",
 	);
-	$config_hash = $self->{config_data_fetch_callback}->();
+	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
+
+	init_vlc_dir_path($config_hash);
+
 	foreach my $key(keys(%{$config_hash})){
 		if(grep { $_ eq $key } @avoid_field ){
 			next;
 		}
-		my $widget = $self->{setting_dialog}->$key;
+		my $widget = $self->{gui_handle}->setting_dialog->$key;
 		$widget->SelectAll;
 		$widget->Clear;
 		$widget->Append($config_hash->{$key});
 	}
 
 	my $key = "USE_SOURCE_AUTH";
-	my $widget = $self->{setting_dialog}->$key;
+	my $widget = $self->{gui_handle}->setting_dialog->$key;
 	if( $config_hash->{$key} ){
 		$widget->SetCheck(1);
 	}else{
 		$widget->SetCheck(0);
 	}
-	$self->{setting_dialog}->DoModal();
+	$self->{gui_handle}->setting_dialog->DoModal();
+	return;
+}
+
+# In initial state, dynamic input field.
+sub init_vlc_dir_path {
+	my ($config_hash) = @_;
+	if ( $config_hash->{INITIAL_LOAD} ){
+		return;
+	}
+	unless (-f "C:\\PROGRA~2\\VideoLAN\\VLC\\vlc.exe"){
+		$config_hash->{ON_DBLCLICK_VLC_DIR} = "C:\\PROGRA~1\\VideoLAN\\VLC\\vlc.exe";
+		return;
+	}
+	$config_hash->{ON_DBLCLICK_VLC_DIR} = "C:\\PROGRA~1\\VideoLAN\\VLC\\vlc.exe";
 	return;
 }
 
@@ -349,6 +377,8 @@ sub setup_setting_dialog {
 		"SOURCE_AUTH_USERNAME",
 		"SOURCE_AUTH_PASSWORD",
 	);
+	my $cancel;
+
 	$self->setting_dialog(Win32::GUI::Window->new(
 		-name => 'Setting',
 		-title => 'RTSP-Server Setting',
@@ -363,6 +393,10 @@ sub setup_setting_dialog {
 		-hasminimize => 0,
 		-minimizebox => 0,
 		-sizable => 0,
+		-dialogui => 1,
+		-titlebar => 0,
+		-sysmenu => 0,
+		-menubox => 0,
 		-parent => $self->main_window,
 	));
 	$self->setting_dialog->AddLabel(
@@ -386,7 +420,7 @@ sub setup_setting_dialog {
 
 	$self->setting_dialog->AddLabel(
 		-name   => "SettingViewVLCDirectoryLabel",
-		-text   => "On Double Click VLC Directory",
+		-text   => "On Double Click VLC File",
 		-left   => 2,
 		-top    => 48,
 		-width  => 180,
@@ -413,7 +447,7 @@ sub setup_setting_dialog {
 
 	$self->setting_dialog->AddLabel(
 		-name   => "SettingViewFFMPEGDirectoryLabel",
-		-text   => "On Receive FFMPEG Directory",
+		-text   => "On Receive FFMPEG File",
 		-left   => 2,
 		-top    => 84,
 		-width  => 180,
@@ -532,7 +566,7 @@ sub setup_setting_dialog {
 		-valign => 'center',
 	);
 
-	$self->setting_dialog->AddButton(
+	$cancel = $self->setting_dialog->AddButton(
 		-name => "SettingView",
 		-text => "Cancel",
 		-top => 538,
@@ -556,35 +590,107 @@ sub setup_setting_dialog {
 	foreach my $var(@setting_fields){
 		$apply_btn->{$var} = $self->setting_dialog->$var;
 	}
-	$apply_btn->{config_data_fetch_callback} = $self->config_data_fetch_callback;
-	$apply_btn->{config_data_write_callback} = $self->config_data_write_callback;
+	$apply_btn->{gui_handle} = $self;
+	unless($self->initial_config->config_data->{INITIAL_LOAD}){
+		$cancel->Hide();
+	}
+	$self->setting_cancel($cancel);
 	return;
 }
 
 sub apply_setting {
 	my ($self) = @_;
 	my $config_hash;
-	my @setting_fields = (
+	my @text_fields = (
 		"RTSP_SOURCE_PORT",
 		"ON_DBLCLICK_VLC_DIR",
 		"ON_RECEIVE_FFMPEG_DIR",
 		"RECORD_FILE_PATH",
 		"RTP_START_PORT",
-		"USE_SOURCE_AUTH",
 		"SOURCE_AUTH_USERNAME",
 		"SOURCE_AUTH_PASSWORD",
 	);
-	$config_hash = $self->{config_data_fetch_callback}->();
-	foreach my $var(@setting_fields){
-		if( $var eq "USE_SOURCE_AUTH" ){
+	my @checkbox_fields = (
+		"USE_SOURCE_AUTH",
+	);
+	unless(check_exist_filesystem($self)){
+		return 1;
+	}
+	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
+	foreach my $var(@text_fields){
+		unless( defined $self->{$var} ){
 			next;
 		}
 		$config_hash->{$var} = $self->{$var}->Text();
 	}
+	foreach my $var(@checkbox_fields){
+		unless($self->{$var}->GetCheck()){
+			$config_hash->{$var} = JSON::PP::false;
+			next;
+		}
+		$config_hash->{$var} = JSON::PP::true;
+	}
+
 	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
-	$self->{config_data_write_callback}->($config_hash);
-	$DB::single=1;
+
+	$self->{gui_handle}->vlc_dir_path($self->{ON_DBLCLICK_VLC_DIR}->Text());
+	$self->{gui_handle}->ffmpeg_dir_path($self->{ON_RECEIVE_FFMPEG_DIR}->Text());
+	$self->{gui_handle}->rtsp_source_bind_port($self->{RTSP_SOURCE_PORT}->Text());
+	update_address_button($self->{gui_handle}->server_address_textfield);
+
+	$self->{gui_handle}->config_data_write_callback->($config_hash);
+	$self->{gui_handle}->setting_cancel->Show();
 	-1;
+}
+
+sub check_exist_filesystem {
+	my ($self) = @_;
+	my $result;
+	my @file_fields = (
+		"ON_DBLCLICK_VLC_DIR",
+		"ON_RECEIVE_FFMPEG_DIR",
+	);
+	my %file_fields_label = (
+		"ON_DBLCLICK_VLC_DIR" => "On Double Click VLC File",
+		"ON_RECEIVE_FFMPEG_DIR" => "On Receive FFMPEG File",
+	);
+	my $key;
+	my @dir_fields = (
+		"RECORD_FILE_PATH",
+	);
+	my %dir_fields_label = (
+		"RECORD_FILE_PATH" => "Record File Directory",
+	);
+	$result = 1;
+
+	$key = undef;
+	foreach my $var(@file_fields){
+		unless ( -f $self->{$var}->Text() ) {
+			$result = 0;
+			$key = $var;
+			last;
+		}
+	}
+	unless ( $result ){
+		if(defined $key){
+			Win32::MsgBox($file_fields_label{$key} . " dose not exist....", MB_ICONINFORMATION);
+		}
+		return 0;
+	}
+	$key = undef;
+	foreach my $var(@dir_fields){
+		unless ( -d $self->{$var}->Text() ) {
+			$result = 0;
+			last;
+		}
+	}
+	unless ( $result ){
+		if(defined $key){
+			Win32::MsgBox($dir_fields_label{$key} . " dose not exist....", MB_ICONINFORMATION);
+		}
+		return 0;
+	}
+	return 1;
 }
 
 sub on_request_hook {
@@ -623,7 +729,7 @@ sub on_recoding_ffmpeg {
 	$mon += 1;
 
 	my $recfile_date = sprintf("%04d%02d%02d%02d%02d%02d" ,$year,$mon,$mday,$hour,$min,$sec);
-	my $exec_ffmpeg = $self->{ffmpeg_dir_path} . "ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:" . $self->{rtsp_client_bind_port} . "/" . $trim_name . " -vcodec copy -acodec copy -sn " . $self->{rec_file_dir_path} . $trim_name . "_" . $recfile_date . ".mp4";
+	my $exec_ffmpeg = $self->{gui_handle}->ffmpeg_dir_path . " -loglevel quiet -i rtsp://127.0.0.1:" . $self->{gui_handle}->rtsp_client_bind_port . "/" . $trim_name . " -vcodec copy -acodec copy -sn " . $self->{gui_handle}->rec_file_dir_path . $trim_name . "_" . $recfile_date . ".mp4";
 	my $pid = system(1, "start " . $exec_ffmpeg);
 	return $pid;
 }
