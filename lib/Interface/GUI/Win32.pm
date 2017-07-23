@@ -326,11 +326,11 @@ sub open_setting_dialog {
 		"RTSP_CLIENT_PORT",
 	);
 	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
-
-	init_vlc_dir_path($config_hash);
-
 	foreach my $key(keys(%{$config_hash})){
 		if(grep { $_ eq $key } @avoid_field ){
+			next;
+		}
+		unless(defined $self->{gui_handle}->setting_dialog->{$key}){
 			next;
 		}
 		my $widget = $self->{gui_handle}->setting_dialog->$key;
@@ -350,28 +350,13 @@ sub open_setting_dialog {
 	return;
 }
 
-# In initial state, dynamic input field.
-sub init_vlc_dir_path {
-	my ($config_hash) = @_;
-	if ( $config_hash->{INITIAL_LOAD} ){
-		return;
-	}
-	unless (-f "C:\\PROGRA~2\\VideoLAN\\VLC\\vlc.exe"){
-		$config_hash->{ON_DBLCLICK_VLC_DIR} = "C:\\PROGRA~1\\VideoLAN\\VLC\\vlc.exe";
-		return;
-	}
-	$config_hash->{ON_DBLCLICK_VLC_DIR} = "C:\\PROGRA~1\\VideoLAN\\VLC\\vlc.exe";
-	return;
-}
-
 sub setup_setting_dialog {
 	my ($self) = @_;
 	my $apply_btn;
 	my @setting_fields = (
 		"RTSP_SOURCE_PORT",
-		"ON_DBLCLICK_VLC_DIR",
-		"ON_RECEIVE_FFMPEG_DIR",
-		"RECORD_FILE_PATH",
+		"ON_DBLCLICK_COMMAND",
+		"ON_RECEIVE_COMMAND",
 		"RTP_START_PORT",
 		"USE_SOURCE_AUTH",
 		"SOURCE_AUTH_USERNAME",
@@ -419,91 +404,66 @@ sub setup_setting_dialog {
 	);
 
 	$self->setting_dialog->AddLabel(
-		-name   => "SettingViewVLCDirectoryLabel",
-		-text   => "On Double Click VLC File",
+		-name   => "SettingViewDblClickCommandLabel",
+		-text   => "On Double Click Command",
 		-left   => 2,
 		-top    => 48,
 		-width  => 180,
-		-height => 32,
+		-height => 80,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "ON_DBLCLICK_VLC_DIR",
+		-name   => "ON_DBLCLICK_COMMAND",
 		-text   => "",
 		-left   => 186,
 		-top    => 48,
 		-width  => 262,
-		-height => 32,
+		-height => 80,
 		-valign => 'center',
+		-multiline => 1,
 	);
 	$self->setting_dialog->AddButton(
-		-name   => "SettingViewVLCDirectoryButton",
-		-text   => "...",
+		-name   => "SettingViewOnDblClickCommandButton",
+		-text   => "?",
 		-left   => 452,
 		-top    => 48,
 		-width  => 36,
-		-height => 32,
+		-height => 80,
 	);
 
 	$self->setting_dialog->AddLabel(
-		-name   => "SettingViewFFMPEGDirectoryLabel",
-		-text   => "On Receive FFMPEG File",
+		-name   => "SettingViewOnReceiveCommandLabel",
+		-text   => "On Receive Command",
 		-left   => 2,
-		-top    => 84,
+		-top    => 132,
 		-width  => 180,
-		-height => 32,
+		-height => 80,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
-		-name   => "ON_RECEIVE_FFMPEG_DIR",
+		-name   => "ON_RECEIVE_COMMAND",
 		-text   => "",
 		-left   => 186,
-		-top    => 84,
+		-top    => 132,
 		-width  => 262,
-		-height => 32,
+		-height => 80,
 		-valign => 'center',
+		-multiline => 1,
 	);
 	$self->setting_dialog->AddButton(
-		-name   => "SettingViewFFMPEGDirectoryButton",
-		-text   => "...",
+		-name   => "SettingViewOnReceiveCommandButton",
+		-text   => "?",
 		-left   => 452,
-		-top    => 84,
+		-top    => 132,
 		-width  => 36,
-		-height => 32,
-	);
-
-	$self->setting_dialog->AddLabel(
-		-name   => "SettingViewRecordFileDirectoryLabel",
-		-text   => "Record File Directory",
-		-left   => 2,
-		-top    => 120,
-		-width  => 180,
-		-height => 32,
-		-align  => 'center',
-	);
-	$self->setting_dialog->AddTextfield(
-		-name   => "RECORD_FILE_PATH",
-		-text   => "",
-		-left   => 186,
-		-top    => 120,
-		-width  => 262,
-		-height => 32,
-		-valign => 'center',
-	);
-	$self->setting_dialog->AddButton(
-		-name   => "SettingViewRecordFileDirectoryButton",
-		-text   => "...",
-		-left   => 452,
-		-top    => 120,
-		-width  => 36,
-		-height => 32,
+		-height => 80,
 	);
 
 	$self->setting_dialog->AddLabel(
 		-name   => "SettingViewRTPStartPortLabel",
 		-text   => "RTP Start Port",
 		-left   => 2,
-		-top    => 156,
+		-top    => 228,
 		-width  => 180,
 		-height => 32,
 		-align  => 'center',
@@ -512,7 +472,7 @@ sub setup_setting_dialog {
 		-name   => "RTP_START_PORT",
 		-text   => "",
 		-left   => 186,
-		-top    => 156,
+		-top    => 228,
 		-width  => 304,
 		-height => 32,
 		-valign => 'center',
@@ -522,7 +482,7 @@ sub setup_setting_dialog {
 		-name   => "USE_SOURCE_AUTH",
 		-text   => "Use Source Authentication",
 		-left   => 2,
-		-top    => 192,
+		-top    => 264,
 		-width  => 180,
 		-height => 32,
 		-align  => 'center',
@@ -532,7 +492,7 @@ sub setup_setting_dialog {
 		-name   => "SettingViewSourceAuthUserNameLabel",
 		-text   => "Source User Name",
 		-left   => 2,
-		-top    => 228,
+		-top    => 300,
 		-width  => 180,
 		-height => 32,
 		-align  => 'center',
@@ -541,7 +501,7 @@ sub setup_setting_dialog {
 		-name   => "SOURCE_AUTH_USERNAME",
 		-text   => "",
 		-left   => 186,
-		-top    => 228,
+		-top    => 300,
 		-width  => 304,
 		-height => 32,
 		-valign => 'center',
@@ -551,7 +511,7 @@ sub setup_setting_dialog {
 		-name   => "SettingViewSourceAuthPasswordLabel",
 		-text   => "Source Password",
 		-left   => 2,
-		-top    => 264,
+		-top    => 336,
 		-width  => 180,
 		-height => 32,
 		-align  => 'center',
@@ -560,7 +520,7 @@ sub setup_setting_dialog {
 		-name   => "SOURCE_AUTH_PASSWORD",
 		-text   => "",
 		-left   => 186,
-		-top    => 264,
+		-top    => 336,
 		-width  => 304,
 		-height => 32,
 		-valign => 'center',
@@ -603,9 +563,8 @@ sub apply_setting {
 	my $config_hash;
 	my @text_fields = (
 		"RTSP_SOURCE_PORT",
-		"ON_DBLCLICK_VLC_DIR",
-		"ON_RECEIVE_FFMPEG_DIR",
-		"RECORD_FILE_PATH",
+		"ON_DBLCLICK_COMMAND",
+		"ON_RECEIVE_COMMAND",
 		"RTP_START_PORT",
 		"SOURCE_AUTH_USERNAME",
 		"SOURCE_AUTH_PASSWORD",
@@ -613,9 +572,6 @@ sub apply_setting {
 	my @checkbox_fields = (
 		"USE_SOURCE_AUTH",
 	);
-	unless(check_exist_filesystem($self)){
-		return 1;
-	}
 	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
 	foreach my $var(@text_fields){
 		unless( defined $self->{$var} ){
@@ -633,64 +589,14 @@ sub apply_setting {
 
 	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
 
-	$self->{gui_handle}->vlc_dir_path($self->{ON_DBLCLICK_VLC_DIR}->Text());
-	$self->{gui_handle}->ffmpeg_dir_path($self->{ON_RECEIVE_FFMPEG_DIR}->Text());
+	$self->{gui_handle}->dblclick_command($self->{ON_DBLCLICK_COMMAND}->Text());
+	$self->{gui_handle}->ffmpeg_dir_path($self->{ON_RECEIVE_COMMAND}->Text());
 	$self->{gui_handle}->rtsp_source_bind_port($self->{RTSP_SOURCE_PORT}->Text());
 	update_address_button($self->{gui_handle}->server_address_textfield);
 
 	$self->{gui_handle}->config_data_write_callback->($config_hash);
 	$self->{gui_handle}->setting_cancel->Show();
 	-1;
-}
-
-sub check_exist_filesystem {
-	my ($self) = @_;
-	my $result;
-	my @file_fields = (
-		"ON_DBLCLICK_VLC_DIR",
-		"ON_RECEIVE_FFMPEG_DIR",
-	);
-	my %file_fields_label = (
-		"ON_DBLCLICK_VLC_DIR" => "On Double Click VLC File",
-		"ON_RECEIVE_FFMPEG_DIR" => "On Receive FFMPEG File",
-	);
-	my $key;
-	my @dir_fields = (
-		"RECORD_FILE_PATH",
-	);
-	my %dir_fields_label = (
-		"RECORD_FILE_PATH" => "Record File Directory",
-	);
-	$result = 1;
-
-	$key = undef;
-	foreach my $var(@file_fields){
-		unless ( -f $self->{$var}->Text() ) {
-			$result = 0;
-			$key = $var;
-			last;
-		}
-	}
-	unless ( $result ){
-		if(defined $key){
-			Win32::MsgBox($file_fields_label{$key} . " dose not exist....", MB_ICONINFORMATION);
-		}
-		return 0;
-	}
-	$key = undef;
-	foreach my $var(@dir_fields){
-		unless ( -d $self->{$var}->Text() ) {
-			$result = 0;
-			last;
-		}
-	}
-	unless ( $result ){
-		if(defined $key){
-			Win32::MsgBox($dir_fields_label{$key} . " dose not exist....", MB_ICONINFORMATION);
-		}
-		return 0;
-	}
-	return 1;
 }
 
 sub on_request_hook {
