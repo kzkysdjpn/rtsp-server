@@ -2,7 +2,7 @@
 	"USE_SOURCE_AUTH"       : false,
 	"SOURCE_AUTH_PASSWORD"  : "password",
 	"ON_DBLCLICK_COMMAND"   : "C:\\PROGRA~2\\VideoLAN\\VLC\\vlc.exe rtsp://localhost:<%RTSPClientPort%>/<%SourceName%>",
-	"ON_RECEIVE_COMMAND"    : "C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%RecDate%>.mp4",
+	"ON_RECEIVE_COMMAND"    : "C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%DateTime%>.mp4",
 	"RTSP_SOURCE_PORT"      : "5545",
 	"RTSP_CLIENT_PORT"      : 5544,
 	"SOURCE_AUTH_USERNAME"  : "username",

@@ -83,7 +83,7 @@ has 'local_control_socket' => (
 	is => 'rw',
 );
 
-has 'vlc_dir_path' => (
+has 'dblclick_command' => (
 	is => 'rw',
 	default => 'C:\\PROGRA~2\\VideoLAN\\VLC\\vlc.exe',
 );
@@ -126,8 +126,18 @@ has 'config_data_write_callback' => (
 	},
 );
 
+has 'request_replace_code_callback' => (
+	is => 'rw',
+	default => sub {
+		sub {
+			return;
+		}
+	},
+);
+
 has 'initial_config' => (
 	is => 'rw',
+	default => sub {},
 );
 
 has 'setting_cancel' => (
@@ -191,7 +201,8 @@ sub open_gui_widget {
 	# Setup RTSP Server Main Window.
 	setup_main_window(@_);
 
-	unless($self->initial_config->config_data->{INITIAL_LOAD}){
+	# $DB::single=1;
+	unless($self->initial_config->{INITIAL_LOAD}){
 		open_setting_dialog($self);
 	}
 
@@ -270,8 +281,9 @@ sub setup_main_window {
 					return;
 				}
 #				$DB::single=1;
-				system("taskkill /im vlc.exe");
-				system("start " . $self->{gui_handle}->vlc_dir_path . " rtsp://localhost:" . $self->{gui_handle}->rtsp_client_bind_port . "/" . $self->GetItemText($index, 0));
+#				system("taskkill /im vlc.exe");
+#				system("start " . $self->{gui_handle}->vlc_dir_path . " rtsp://localhost:" . $self->{gui_handle}->rtsp_client_bind_port . "/" . $self->GetItemText($index, 0));
+				$self->{gui_handle}->request_replace_code_callback->();
 				return;
 			},
 		)
@@ -389,16 +401,16 @@ sub setup_setting_dialog {
 		-text   => "RTSP Source Port",
 		-left   => 2,
 		-top    => 12,
-		-width  => 180,
+		-width  => 140,
 		-height => 32,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
 		-name   => "RTSP_SOURCE_PORT",
 		-text   => "",
-		-left   => 186,
+		-left   => 150,
 		-top    => 12,
-		-width  => 304,
+		-width  => 340,
 		-height => 32,
 		-valign => 'center',
 	);
@@ -408,16 +420,16 @@ sub setup_setting_dialog {
 		-text   => "On Double Click Command",
 		-left   => 2,
 		-top    => 48,
-		-width  => 180,
+		-width  => 140,
 		-height => 80,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
 		-name   => "ON_DBLCLICK_COMMAND",
 		-text   => "",
-		-left   => 186,
+		-left   => 150,
 		-top    => 48,
-		-width  => 262,
+		-width  => 298,
 		-height => 80,
 		-valign => 'center',
 		-multiline => 1,
@@ -436,16 +448,16 @@ sub setup_setting_dialog {
 		-text   => "On Receive Command",
 		-left   => 2,
 		-top    => 132,
-		-width  => 180,
+		-width  => 140,
 		-height => 80,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
 		-name   => "ON_RECEIVE_COMMAND",
 		-text   => "",
-		-left   => 186,
+		-left   => 150,
 		-top    => 132,
-		-width  => 262,
+		-width  => 298,
 		-height => 80,
 		-valign => 'center',
 		-multiline => 1,
@@ -464,16 +476,16 @@ sub setup_setting_dialog {
 		-text   => "RTP Start Port",
 		-left   => 2,
 		-top    => 228,
-		-width  => 180,
+		-width  => 140,
 		-height => 32,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
 		-name   => "RTP_START_PORT",
 		-text   => "",
-		-left   => 186,
+		-left   => 150,
 		-top    => 228,
-		-width  => 304,
+		-width  => 340,
 		-height => 32,
 		-valign => 'center',
 	);
@@ -493,16 +505,16 @@ sub setup_setting_dialog {
 		-text   => "Source User Name",
 		-left   => 2,
 		-top    => 300,
-		-width  => 180,
+		-width  => 140,
 		-height => 32,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
 		-name   => "SOURCE_AUTH_USERNAME",
 		-text   => "",
-		-left   => 186,
+		-left   => 150,
 		-top    => 300,
-		-width  => 304,
+		-width  => 340,
 		-height => 32,
 		-valign => 'center',
 	);
@@ -512,16 +524,16 @@ sub setup_setting_dialog {
 		-text   => "Source Password",
 		-left   => 2,
 		-top    => 336,
-		-width  => 180,
+		-width  => 140,
 		-height => 32,
 		-align  => 'center',
 	);
 	$self->setting_dialog->AddTextfield(
 		-name   => "SOURCE_AUTH_PASSWORD",
 		-text   => "",
-		-left   => 186,
+		-left   => 150,
 		-top    => 336,
-		-width  => 304,
+		-width  => 340,
 		-height => 32,
 		-valign => 'center',
 	);
@@ -551,7 +563,7 @@ sub setup_setting_dialog {
 		$apply_btn->{$var} = $self->setting_dialog->$var;
 	}
 	$apply_btn->{gui_handle} = $self;
-	unless($self->initial_config->config_data->{INITIAL_LOAD}){
+	unless($self->initial_config->{INITIAL_LOAD}){
 		$cancel->Hide();
 	}
 	$self->setting_cancel($cancel);

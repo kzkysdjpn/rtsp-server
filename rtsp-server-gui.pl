@@ -56,8 +56,14 @@ $gui->config_data_write_callback(sub {
 	}
 	return;
 });
+
+$gui->request_replace_code_callback(sub {
+	print "request replace code callback\n";
+	return;
+});
+
 $gui->window_terminate_callback(\&close_event);
-$gui->initial_config($initial_config);
+$gui->initial_config($initial_config->config_data);
 $gui->open;
 
 # end if interrupt

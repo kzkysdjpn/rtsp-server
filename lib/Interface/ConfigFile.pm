@@ -88,6 +88,28 @@ sub write {
 	return 1;
 }
 
+sub replace_code {
+	my ($self, $source_string, $source_name, $rtsp_port, $date_time, $source_count) = @_;
+	my @replace_source = (
+		"<%SourceName%>",
+		"<%RTSPClientPort%>",
+		"<%DateTime%>",
+		"<%SourceCount%>"
+	);
+	my @replace_string = (
+		$source_name,
+		$rtsp_port,
+		$date_time,
+		$source_count
+	);
+
+	foreach my $i(0 .. $#replace_source){
+		$source_string =~ s/(?:$replace_source[$i])/$replace_string[$i]/g;
+	}
+
+	return $source_string;
+}
+
 __PACKAGE__->meta->make_immutable;
 
 __END__
