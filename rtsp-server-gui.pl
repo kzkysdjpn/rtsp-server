@@ -57,13 +57,25 @@ $gui->config_data_write_callback(sub {
 	return;
 });
 
-$gui->request_replace_code_callback(sub {
-	print "request replace code callback\n";
+$gui->fetch_configuration_callback(sub {
+	print "Reboot \n";
 	return;
 });
 
+$gui->request_replace_code_callback(sub {
+	my $replace_config = Interface::ConfigFile->new;
+	my $ret_string = $replace_config->replace_code(
+		$_[0],
+		$_[1],
+		$_[2],
+		$_[3],
+		$_[4]
+	);
+	return $ret_string;
+});
+
 $gui->window_terminate_callback(\&close_event);
-$gui->initial_config($initial_config->config_data);
+$gui->config_data($initial_config->config_data);
 $gui->open;
 
 # end if interrupt

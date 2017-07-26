@@ -50,6 +50,15 @@ has 'window_terminate_callback' => (
 	},
 );
 
+has 'fetch_configuration_callback' => (
+	is => 'rw',
+	default => sub {
+		sub {
+			return;
+		}
+	},
+);
+
 has 'watcher' => (
 	is => 'rw',
 	clearer => 'clear_watcher',
@@ -83,31 +92,6 @@ has 'local_control_socket' => (
 	is => 'rw',
 );
 
-has 'dblclick_command' => (
-	is => 'rw',
-	default => 'C:\\PROGRA~2\\VideoLAN\\VLC\\vlc.exe',
-);
-
-has 'ffmpeg_dir_path' => (
-	is => 'rw',
-	default => 'C:\\ffmpeg\\bin\\ffmpeg.exe',
-);
-
-has 'rec_file_dir_path' => (
-	is => 'rw',
-	default => 'C:\\rtsp_rec_data\\',
-);
-
-has 'rtsp_client_bind_port' => (
-	is => 'rw',
-	default => 5544,
-);
-
-has 'rtsp_source_bind_port' => (
-	is => 'rw',
-	default => 5545,
-);
-
 has 'config_data_fetch_callback' => (
 	is => 'rw',
 	default => sub {
@@ -135,7 +119,7 @@ has 'request_replace_code_callback' => (
 	},
 );
 
-has 'initial_config' => (
+has 'config_data' => (
 	is => 'rw',
 	default => sub {},
 );
@@ -166,7 +150,7 @@ sub open {
 			}
 			next unless $buf;
 			my @callback = (
-				undef,
+				$self->fetch_configuration_callback,
 				$self->window_terminate_callback,
 			);
 			my $result = thaw $buf;
@@ -202,7 +186,7 @@ sub open_gui_widget {
 	setup_main_window(@_);
 
 	# $DB::single=1;
-	unless($self->initial_config->{INITIAL_LOAD}){
+	unless($self->config_data->{INITIAL_LOAD}){
 		open_setting_dialog($self);
 	}
 
@@ -210,6 +194,23 @@ sub open_gui_widget {
 	exit(0);
 
 	return;
+}
+
+sub fetch_configration {
+	my ($self) = @_;
+	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
+	my $sock_addr = pack_sockaddr_in($self->{gui_handle}->local_control_port + 0,
+						Socket::inet_aton("localhost"));
+	my $data = {
+		# Arbitary Defined
+		# 0 - Fetch Configuration
+		# 1 - Terminate App
+		"APP_CTL_OPS" => 0,
+	};
+	my $frozen = nfreeze $data;
+	send($sock, $frozen, 0, $sock_addr);
+	shutdown $sock, 2;
+	-1;
 }
 
 sub do_terminate_app {
@@ -276,14 +277,20 @@ sub setup_main_window {
 				my ($self) = @_;
 				my $index;
 				my $gui_handle;
+				my $dbl_clk_cmd;
 				$index = $self->SelectedItems();
 				unless (defined $index){
 					return;
 				}
-#				$DB::single=1;
 #				system("taskkill /im vlc.exe");
-#				system("start " . $self->{gui_handle}->vlc_dir_path . " rtsp://localhost:" . $self->{gui_handle}->rtsp_client_bind_port . "/" . $self->GetItemText($index, 0));
-				$self->{gui_handle}->request_replace_code_callback->();
+				$dbl_clk_cmd = $self->{gui_handle}->request_replace_code_callback->(
+					$self->{gui_handle}->config_data->{ON_DBLCLICK_COMMAND},
+					$self->GetItemText($index, 0),
+					$self->{gui_handle}->config_data->{RTSP_CLIENT_PORT},
+					date_time_string(),
+					$self->GetItemText($index, 4)
+				);
+				system("start " . $dbl_clk_cmd);
 				return;
 			},
 		)
@@ -303,7 +310,7 @@ sub setup_main_window {
 	$self->server_address_textfield(
 		$self->main_window->AddButton(
 			-name => "LocalIPViewButton",
-			-text => "Local PC IP is " . $local_addrs[0] . ":" . $self->rtsp_source_bind_port,
+			-text => "Local PC IP and Port is " . $local_addrs[0] . ":" . $self->config_data->{RTSP_SOURCE_PORT},
 			-top => 524,
 			-left => 2,
 			-width => 488,
@@ -325,7 +332,7 @@ sub update_address_button {
 	my ($self) = @_;
 	my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
 	$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
-	$self->Text("Local PC IP is " . $local_addrs[0] . ":" . $self->{gui_handle}->rtsp_source_bind_port);
+	$self->Text("Local PC IP and Port is " . $local_addrs[0] . ":" . $self->{gui_handle}->config_data->{RTSP_SOURCE_PORT});
 	return;
 }
 
@@ -563,7 +570,7 @@ sub setup_setting_dialog {
 		$apply_btn->{$var} = $self->setting_dialog->$var;
 	}
 	$apply_btn->{gui_handle} = $self;
-	unless($self->initial_config->{INITIAL_LOAD}){
+	unless($self->config_data->{INITIAL_LOAD}){
 		$cancel->Hide();
 	}
 	$self->setting_cancel($cancel);
@@ -601,13 +608,12 @@ sub apply_setting {
 
 	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
 
-	$self->{gui_handle}->dblclick_command($self->{ON_DBLCLICK_COMMAND}->Text());
-	$self->{gui_handle}->ffmpeg_dir_path($self->{ON_RECEIVE_COMMAND}->Text());
-	$self->{gui_handle}->rtsp_source_bind_port($self->{RTSP_SOURCE_PORT}->Text());
 	update_address_button($self->{gui_handle}->server_address_textfield);
 
 	$self->{gui_handle}->config_data_write_callback->($config_hash);
 	$self->{gui_handle}->setting_cancel->Show();
+	$self->{gui_handle}->config_data($config_hash);
+	$self->{gui_handle}->fetch_configration();
 	-1;
 }
 
@@ -615,12 +621,12 @@ sub on_request_hook {
 	my ($self, $len, $data) = @_;
 	my $frozen = unpack("P$len", pack('Q', $data));
 	my $result = thaw $frozen;
-	my $trim_name = substr $$result{APPLICATION}, 1;
+	my $source_name = substr $$result{APPLICATION}, 1;
 
 	if($$result{OPS} == 0){ # Remove application process.
 		my $find_item = $self->AppListView->FindItem(
 			-1,
-			-string => $trim_name,
+			-string => $source_name,
 		);
 		if ($find_item < 0){
 			return;
@@ -633,23 +639,33 @@ sub on_request_hook {
 	$year += 1900;
 	$mon += 1;
 
-	my $pid = on_recoding_ffmpeg($self, $trim_name);
+	my $pid = exec_on_receive_command($self, $source_name, $$result{COUNT});
 	# Add application process.
 	my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
-	my $ret = $self->AppListView->InsertItem(-text => [$trim_name, $$result{HOST}, $date, $pid, $$result{COUNT}]);
+	my $ret = $self->AppListView->InsertItem(-text => [$source_name, $$result{HOST}, $date, $pid, $$result{COUNT}]);
 	return;
 }
 
-sub on_recoding_ffmpeg {
-	my ($self, $trim_name) = @_;
+sub exec_on_receive_command {
+	my ($self, $source_name, $source_count) = @_;
+	my $on_recv_cmd;
+	$on_recv_cmd = $self->{gui_handle}->request_replace_code_callback->(
+					$self->{gui_handle}->config_data->{ON_RECEIVE_COMMAND},
+					$source_name,
+					$self->{gui_handle}->config_data->{RTSP_CLIENT_PORT},
+					date_time_string(),
+					$source_count
+		);
+	my $pid = system(1, "start " . $on_recv_cmd);
+	return $pid;
+}
+
+sub date_time_string {
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	$year += 1900;
 	$mon += 1;
-
-	my $recfile_date = sprintf("%04d%02d%02d%02d%02d%02d" ,$year,$mon,$mday,$hour,$min,$sec);
-	my $exec_ffmpeg = $self->{gui_handle}->ffmpeg_dir_path . " -loglevel quiet -i rtsp://127.0.0.1:" . $self->{gui_handle}->rtsp_client_bind_port . "/" . $trim_name . " -vcodec copy -acodec copy -sn " . $self->{gui_handle}->rec_file_dir_path . $trim_name . "_" . $recfile_date . ".mp4";
-	my $pid = system(1, "start " . $exec_ffmpeg);
-	return $pid;
+	my $date_time = sprintf("%04d%02d%02d%02d%02d%02d" ,$year,$mon,$mday,$hour,$min,$sec);
+	return $date_time;
 }
 
 sub close {
