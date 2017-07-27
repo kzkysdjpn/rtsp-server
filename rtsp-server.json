@@ -1,1 +1,11 @@
-{"ON_RECEIVE_COMMAND":"C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%DateTime%>.mp4","INITIAL_LOAD":true,"RTSP_CLIENT_PORT":5544,"RTP_START_PORT":"6970","SOURCE_AUTH_USERNAME":"username","SOURCE_AUTH_PASSWORD":"password","ON_DBLCLICK_COMMAND":"C:\\PROGRA~1\\VideoLAN\\VLC\\vlc.exe rtsp://localhost:<%RTSPClientPort%>/<%SourceName%>","USE_SOURCE_AUTH":false,"RTSP_SOURCE_PORT":"5545"}
+{
+    "ON_DBLCLICK_COMMAND"  : "C:\\ffmpeg\\bin\\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>",
+    "ON_RECEIVE_COMMAND"   : "C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%DateTime%>.mp4",
+    "RTP_START_PORT"       : "6970",
+    "RTSP_CLIENT_PORT"     : 5544,
+    "RTSP_SOURCE_PORT"     : "5545",
+    "USE_SOURCE_AUTH"      : false,
+    "INITIAL_LOAD"         : true,
+    "SOURCE_AUTH_PASSWORD" : "password",
+    "SOURCE_AUTH_USERNAME" : "username"
+}
