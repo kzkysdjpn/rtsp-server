@@ -10,6 +10,9 @@ use RTSP::Server;
 use Interface::GUI::Win32;
 use Interface::ConfigFile;
 
+# Condition Variable for AnyEvent parameter.
+my $cv;
+
 my $initial_config = Interface::ConfigFile->new;
 unless ( $initial_config->open ){
 	print STDERR ("Invalid configuration.\n");
@@ -25,10 +28,25 @@ $srv->remove_source_update_callback(\&remove_source_update_callback);
 # listen and accept incoming connections
 $srv->listen;
 
-# main loop
-my $cv = AnyEvent->condvar;
+# signal parameter
+# 0 - reboot
+# 1 - terminate
+my $signal = 0;
 
 my $gui = Interface::GUI::Win32->new;
+
+$gui->request_replace_code_callback(sub {
+	my $replace_config = Interface::ConfigFile->new;
+	my $ret_string = $replace_config->replace_code(
+		$_[0],
+		$_[1],
+		$_[2],
+		$_[3],
+		$_[4]
+	);
+	return $ret_string;
+});
+
 $gui->config_data_fetch_callback(sub {
 	my $fetch_config;
 	my $config_hash;
@@ -57,21 +75,10 @@ $gui->config_data_write_callback(sub {
 	return;
 });
 
-$gui->fetch_configuration_callback(sub {
-	print "Reboot \n";
+$gui->configuration_reboot_callback(sub {
+	$signal	= 0;
+	$cv->send;
 	return;
-});
-
-$gui->request_replace_code_callback(sub {
-	my $replace_config = Interface::ConfigFile->new;
-	my $ret_string = $replace_config->replace_code(
-		$_[0],
-		$_[1],
-		$_[2],
-		$_[3],
-		$_[4]
-	);
-	return $ret_string;
 });
 
 $gui->window_terminate_callback(\&close_event);
@@ -88,10 +95,17 @@ my $count = 0;
 $initial_config->close;
 $initial_config = undef;
 
-$cv->recv;
+# main loop
+while($signal == 0){
+	$cv = AnyEvent->condvar;
+	$cv->recv;
+	print "signal = " . $signal . "\n";
+	$cv = undef;
+}
 $gui->close;
 
 sub close_event {
+	$signal	= 1;
 	$cv->send;
 	return;
 }

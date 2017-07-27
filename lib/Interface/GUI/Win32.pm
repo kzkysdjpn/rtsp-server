@@ -50,7 +50,7 @@ has 'window_terminate_callback' => (
 	},
 );
 
-has 'fetch_configuration_callback' => (
+has 'configuration_reboot_callback' => (
 	is => 'rw',
 	default => sub {
 		sub {
@@ -150,7 +150,7 @@ sub open {
 			}
 			next unless $buf;
 			my @callback = (
-				$self->fetch_configuration_callback,
+				$self->configuration_reboot_callback,
 				$self->window_terminate_callback,
 			);
 			my $result = thaw $buf;
