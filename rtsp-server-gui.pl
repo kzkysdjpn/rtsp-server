@@ -13,21 +13,11 @@ use Interface::ConfigFile;
 # Condition Variable for AnyEvent parameter.
 my $cv;
 
-my $initial_config = Interface::ConfigFile->new;
-unless ( $initial_config->open ){
+my $setup_config = Interface::ConfigFile->new;
+unless ( $setup_config->open ){
 	print STDERR ("Invalid configuration.\n");
 	exit(0);
 }
-# you may pass your own options in here or via command-line
-my $srv = RTSP::Server->new_with_options(
-);
-$srv->add_source_update_callback(\&add_source_update_callback);
-
-$srv->remove_source_update_callback(\&remove_source_update_callback);
-
-# listen and accept incoming connections
-$srv->listen;
-
 # signal parameter
 # 0 - reboot
 # 1 - terminate
@@ -82,7 +72,7 @@ $gui->configuration_reboot_callback(sub {
 });
 
 $gui->window_terminate_callback(\&close_event);
-$gui->config_data($initial_config->config_data);
+$gui->config_data($setup_config->config_data);
 $gui->open;
 
 # end if interrupt
@@ -92,8 +82,20 @@ $SIG{INT} = sub {
 
 my $count = 0;
 
-$initial_config->close;
-$initial_config = undef;
+# you may pass your own options in here or via command-line
+my $srv = RTSP::Server->new;
+$srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
+$srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
+$srv->log_level(0);
+
+$srv->add_source_update_callback(\&add_source_update_callback);
+$srv->remove_source_update_callback(\&remove_source_update_callback);
+
+# listen and accept incoming connections
+$srv->listen;
+
+$setup_config->close;
+$setup_config = undef;
 
 # main loop
 while($signal == 0){
@@ -101,6 +103,26 @@ while($signal == 0){
 	$cv->recv;
 	print "signal = " . $signal . "\n";
 	$cv = undef;
+	if($signal != 0){
+		next;
+	}
+	my $setup_config = Interface::ConfigFile->new;
+	unless ( $setup_config->open ){
+		print STDERR ("Invalid configuration.\n");
+		$signal = 1;
+		next;
+	}
+	undef $srv;
+	$srv = RTSP::Server->new;
+	$srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
+	$srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
+	$srv->log_level(0);
+
+	$srv->add_source_update_callback(\&add_source_update_callback);
+	$srv->remove_source_update_callback(\&remove_source_update_callback);
+
+	# listen and accept incoming connections
+	$srv->listen;
 }
 $gui->close;
 
