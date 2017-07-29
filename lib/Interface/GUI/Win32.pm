@@ -196,7 +196,7 @@ sub open_gui_widget {
 	return;
 }
 
-sub fetch_configration {
+sub reboot_configration {
 	my ($self) = @_;
 	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
 	my $sock_addr = pack_sockaddr_in($self->{gui_handle}->local_control_port + 0,
@@ -581,7 +581,6 @@ sub apply_setting {
 	my ($self) = @_;
 	my $config_hash;
 	my @text_fields = (
-		"RTSP_SOURCE_PORT",
 		"ON_DBLCLICK_COMMAND",
 		"ON_RECEIVE_COMMAND",
 		"RTP_START_PORT",
@@ -592,6 +591,9 @@ sub apply_setting {
 		"USE_SOURCE_AUTH",
 	);
 	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
+
+	check_rtsp_source_and_client_port($self, $config_hash);
+
 	foreach my $var(@text_fields){
 		unless( defined $self->{$var} ){
 			next;
@@ -608,13 +610,25 @@ sub apply_setting {
 
 	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
 
-	update_address_button($self->{gui_handle}->server_address_textfield);
-
 	$self->{gui_handle}->config_data_write_callback->($config_hash);
 	$self->{gui_handle}->setting_cancel->Show();
 	$self->{gui_handle}->config_data($config_hash);
-	$self->{gui_handle}->fetch_configration();
+	$self->{gui_handle}->reboot_configration();
+
+	update_address_button($self->{gui_handle}->server_address_textfield);
+
 	-1;
+}
+
+sub check_rtsp_source_and_client_port {
+	my ($self, $config_hash) = @_;
+	my $rtsp_client_port = $config_hash->{RTSP_CLIENT_PORT} . "";
+	my $rtsp_source_port = $self->{RTSP_SOURCE_PORT}->Text();
+	if($rtsp_client_port eq $rtsp_source_port){
+		return;
+	}
+	$config_hash->{RTSP_SOURCE_PORT} = $rtsp_source_port;
+	return;
 }
 
 sub on_request_hook {

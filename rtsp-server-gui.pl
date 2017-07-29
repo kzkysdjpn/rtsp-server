@@ -15,8 +15,8 @@ my $cv;
 
 my $setup_config = Interface::ConfigFile->new;
 unless ( $setup_config->open ){
-	print STDERR ("Invalid configuration.\n");
-	exit(0);
+    print STDERR ("Invalid configuration.\n");
+    exit(0);
 }
 # signal parameter
 # 0 - reboot
@@ -26,49 +26,49 @@ my $signal = 0;
 my $gui = Interface::GUI::Win32->new;
 
 $gui->request_replace_code_callback(sub {
-	my $replace_config = Interface::ConfigFile->new;
-	my $ret_string = $replace_config->replace_code(
-		$_[0],
-		$_[1],
-		$_[2],
-		$_[3],
-		$_[4]
-	);
-	return $ret_string;
+    my $replace_config = Interface::ConfigFile->new;
+    my $ret_string = $replace_config->replace_code(
+        $_[0], # Source request string
+        $_[1], # Source name
+        $_[2], # RTSP client port
+        $_[3], # Date and time information
+        $_[4]  # Source connect accumlation count
+     );
+    return $ret_string;
 });
 
 $gui->config_data_fetch_callback(sub {
-	my $fetch_config;
-	my $config_hash;
-	$fetch_config = Interface::ConfigFile->new;
-	unless ( $fetch_config->open ){
-		print STDERR ("Invalid open config in fetch.\n");
-		return undef;
-	}
-	$config_hash = $fetch_config->config_data;
-	return $config_hash;
+    my $fetch_config;
+    my $config_hash;
+    $fetch_config = Interface::ConfigFile->new;
+    unless ( $fetch_config->open ){
+        print STDERR ("Invalid open config in fetch.\n");
+        return undef;
+    }
+    $config_hash = $fetch_config->config_data;
+    return $config_hash;
 });
 
 $gui->config_data_write_callback(sub {
-	my ($config_hash) = @_;
-	my $write_config;
-	$write_config = Interface::ConfigFile->new;
-	unless ( $write_config->open){
-		print STDERR ("Invalid open config in write.\n");
-		return;
-	}
-	$write_config->config_data($config_hash);
-	unless ( $write_config->write ){
-		print STDERR ("Invalid write config operation.\n");
-		return;
-	}
-	return;
+    my ($config_hash) = @_;
+    my $write_config;
+    $write_config = Interface::ConfigFile->new;
+    unless ( $write_config->open){
+        print STDERR ("Invalid open config in write.\n");
+        return;
+    }
+    $write_config->config_data($config_hash);
+    unless ( $write_config->write ){
+        print STDERR ("Invalid write config operation.\n");
+        return;
+    }
+    return;
 });
 
 $gui->configuration_reboot_callback(sub {
-	$signal	= 0;
-	$cv->send;
-	return;
+    $signal	= 0;
+    $cv->send;
+    return;
 });
 
 $gui->window_terminate_callback(\&close_event);
@@ -86,7 +86,7 @@ my $count = 0;
 my $srv = RTSP::Server->new;
 $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
 $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
-$srv->log_level(0);
+$srv->log_level(4);
 
 $srv->add_source_update_callback(\&add_source_update_callback);
 $srv->remove_source_update_callback(\&remove_source_update_callback);
@@ -99,37 +99,38 @@ $setup_config = undef;
 
 # main loop
 while($signal == 0){
-	$cv = AnyEvent->condvar;
-	$cv->recv;
-	print "signal = " . $signal . "\n";
-	$cv = undef;
-	if($signal != 0){
-		next;
-	}
-	my $setup_config = Interface::ConfigFile->new;
-	unless ( $setup_config->open ){
-		print STDERR ("Invalid configuration.\n");
-		$signal = 1;
-		next;
-	}
-	undef $srv;
-	$srv = RTSP::Server->new;
-	$srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
-	$srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
-	$srv->log_level(0);
+    $cv = AnyEvent->condvar;
+    $cv->recv;
+    print "signal = " . $signal . "\n";
+    $cv = undef;
+    if($signal != 0){
+        next;
+    }
+    $setup_config = Interface::ConfigFile->new;
+    unless ( $setup_config->open ){
+    print STDERR ("Invalid configuration.\n");
+        $signal = 1;
+        next;
+    }
+    $srv->close_server;
+    undef $srv;
+    $srv = RTSP::Server->new;
+    $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
+    $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
+    $srv->log_level(4);
 
-	$srv->add_source_update_callback(\&add_source_update_callback);
-	$srv->remove_source_update_callback(\&remove_source_update_callback);
+    $srv->add_source_update_callback(\&add_source_update_callback);
+    $srv->remove_source_update_callback(\&remove_source_update_callback);
 
-	# listen and accept incoming connections
-	$srv->listen;
+    # listen and accept incoming connections
+    $srv->listen;
 }
 $gui->close;
 
 sub close_event {
-	$signal	= 1;
-	$cv->send;
-	return;
+    $signal = 1;
+    $cv->send;
+    return;
 }
 
 sub add_source_update_callback{

@@ -160,7 +160,6 @@ sub listen {
 
 sub start_client_server {
     my ($self) = @_;
-
     $self->close_client_server;
 
     my $bind_ip = $self->client_listen_address;
@@ -182,7 +181,6 @@ sub start_client_server {
 
 sub start_source_server {
     my ($self) = @_;
-
     $self->close_source_server;
 
     my $bind_ip = $self->source_listen_address;
@@ -200,6 +198,14 @@ sub start_source_server {
     $self->info("Source server started");
     
     return $server;
+}
+
+sub close_server {
+    my ($self) = @_;
+    $self->info("Close server\n");
+    $self->client_server->listener(undef);
+    $self->source_server->listener(undef);
+    return;
 }
 
 sub build_logger {
