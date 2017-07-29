@@ -88,19 +88,30 @@ sub write {
 	return 1;
 }
 
+use FindBin;
+
+sub get_app_path {
+	my $app_path = $FindBin::Bin;
+	$app_path =~ s/(?:\/)/\\/g;
+	return $app_path;
+}
+
 sub replace_code {
 	my ($self, $source_string, $source_name, $rtsp_port, $date_time, $source_count) = @_;
+	my $app_path = get_app_path;
 	my @replace_source = (
 		"<%SourceName%>",
 		"<%RTSPClientPort%>",
 		"<%DateTime%>",
-		"<%SourceCount%>"
+		"<%SourceCount%>",
+		"<%AppPath%>"
 	);
 	my @replace_string = (
 		$source_name,
 		$rtsp_port,
 		$date_time,
-		$source_count
+		$source_count,
+		$app_path
 	);
 
 	foreach my $i(0 .. $#replace_source){
