@@ -203,8 +203,11 @@ sub start_source_server {
 sub close_server {
     my ($self) = @_;
     $self->info("Close server\n");
-    $self->client_server->listener(undef);
-    $self->source_server->listener(undef);
+    $DB::single=1;
+    $self->client_server->close_listen_socket;
+    $self->source_server->close_listen_socket;
+    $self->add_source_update_callback(undef);
+    $self->remove_source_update_callback(undef);
     return;
 }
 

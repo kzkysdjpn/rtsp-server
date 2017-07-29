@@ -54,6 +54,10 @@ has 'server' => (
     handles => [qw/ mounts trace debug info warn error max_clients /],
 );
 
+has 'listen_socket' => (
+    is => 'rw',
+);
+
 sub connection_count {
     my ($self) = @_;
 
@@ -68,7 +72,6 @@ sub listen {
     my $bind_ip = $self->listen_address;
     my $bind_port = $self->listen_port;
     my $conn_class = $self->connection_class;
-
     my $listener = tcp_server $bind_ip, $bind_port, sub {
         my ($fh, $rhost, $rport) = @_;
         
@@ -207,9 +210,22 @@ sub listen {
 
         # save connection object
         $self->connections->{$conn->id} = $conn;
+    }, sub {
+        my ($fh, $host, $port) = @_;
+        $self->info("$conn_class Bind at $host:$port");
+        $self->listen_socket($fh);
+        return;
     } or die $!;
     
     $self->listener($listener);
+}
+
+sub close_listen_socket {
+    my ($self) = @_;
+    shutdown $self->listen_socket, 2;
+    $self->listen_socket->close;
+    $self->listen_socket(undef);
+    return;
 }
 
 1;

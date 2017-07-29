@@ -114,6 +114,7 @@ while($signal == 0){
     }
     $srv->close_server;
     undef $srv;
+    sleep 1;
     $srv = RTSP::Server->new;
     $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
     $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
