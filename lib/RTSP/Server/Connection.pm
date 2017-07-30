@@ -108,6 +108,27 @@ has 'server' => (
     handles => [qw/ next_rtp_start_port mounts trace debug info warn error /],
 );
 
+has 'realm' => (
+    is => 'rw',
+    isa => 'Str',
+    default => "RTSP Server",
+);
+
+has 'nonce' => (
+    is => 'rw',
+    isa => 'Str',
+);
+
+has 'username' => (
+    is => 'rw',
+    isa => 'Str',
+);
+
+has 'password' => (
+    is => 'rw',
+    isa => 'Str',
+);
+
 # should return a list of supported methods
 sub public_options {
     return qw/OPTIONS DESCRIBE TEARDOWN/;
@@ -163,6 +184,23 @@ sub not_found {
 sub internal_server_error {
     my ($self) = @_;
     $self->push_response(500, "Internal Server Error");
+}
+
+sub unauthorized {
+    my ($self) = @_;
+    my $i;
+    my $nonce_16;
+    my $nonce = "";
+    my $auth_resp_line;
+
+    for($i = 0; $i < 8; $i++){
+        $nonce_16 = sprintf("%04x", int(rand 0xFFFF)) . "";
+        $nonce = $nonce . $nonce_16;
+    }
+    $self->nonce($nonce);
+    $auth_resp_line = "Digest realm=\"" . $self->realm . "\", nonce=\"" . $self->nonce . "\"";
+    $self->add_resp_header('WWW-Authenticate', $auth_resp_line);
+    $self->push_response(401, "Unauthorized");
 }
 
 sub push_ok {
