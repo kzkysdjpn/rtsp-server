@@ -211,6 +211,15 @@ sub unauthorized {
 }
 
 sub check_authorization_header {
+    my ($self) = @_;
+    my $auth_line = $self->get_req_header('Authorization');
+    unless(defined $auth_line){
+        return 0;
+    }
+    print $auth_line . "\n";
+    my ($user_name) = $auth_line =~ m/username=/smi;
+    $DB::single=1;
+    return 1;
 }
 
 sub push_ok {
@@ -255,8 +264,7 @@ sub handle_request {
         $self->reset;
         return;
     }
-    $DB::single=1;
-    if("options" eq $method) {
+    if(lc $allowed_methods[0] eq $method) {
         my $ok = eval {
             $self->$method;
             1;
@@ -268,8 +276,19 @@ sub handle_request {
         $self->reset;
         return;
     }
-    print $method . "\n";
-    $self->unauthorized;
+    unless($self->check_authorization_header){
+        $self->unauthorized;
+        $self->reset;
+        return;
+    }
+    my $ok = eval {
+        $self->$method;
+        1;
+    };
+    if (! $ok || $@) {
+        $self->error("Error handling " . uc($method) . ": " .
+                     ($@ || 'unknown error'));
+    }
     $self->reset;
     return;
 }
