@@ -117,6 +117,16 @@ has 'remove_source_update_callback' => (
     traits => [ 'NoGetopt'],
 );
 
+has 'auth_info_request_callback' => (
+    is => 'rw',
+    default => sub {
+        sub{
+            return "";
+        }
+    },
+    traits => [ 'NoGetopt'],
+);
+
 sub client_count {
     my ($self) = @_;
 
@@ -203,7 +213,6 @@ sub start_source_server {
 sub close_server {
     my ($self) = @_;
     $self->info("Close server\n");
-    $DB::single=1;
     $self->client_server->close_listen_socket;
     $self->source_server->close_listen_socket;
     $self->add_source_update_callback(undef);

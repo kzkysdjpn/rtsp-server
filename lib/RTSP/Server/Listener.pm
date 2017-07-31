@@ -95,6 +95,7 @@ sub listen {
             local_address => $local_addr,
             addr_family => $addr_family,
             server => $self->server,
+            class_name => ${conn_class},
         );
 
         $self->next_connection_id($self->next_connection_id + 1);

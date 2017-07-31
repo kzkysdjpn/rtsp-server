@@ -90,6 +90,7 @@ $srv->log_level(4);
 
 $srv->add_source_update_callback(\&add_source_update_callback);
 $srv->remove_source_update_callback(\&remove_source_update_callback);
+$srv->auth_info_request_callback(\&auth_info_request_callback);
 
 # listen and accept incoming connections
 $srv->listen;
@@ -122,6 +123,7 @@ while($signal == 0){
 
     $srv->add_source_update_callback(\&add_source_update_callback);
     $srv->remove_source_update_callback(\&remove_source_update_callback);
+    $srv->auth_info_request_callback(\&auth_info_request_callback);
 
     # listen and accept incoming connections
     $srv->listen;
@@ -145,4 +147,9 @@ sub remove_source_update_callback{
     my ($path) = @_;
     $gui->remove_application($path, $count);
     return;
+}
+
+sub auth_info_request_callback {
+    my ($server_name, $user_name, $mount_point, $remote_ip) = @_;
+    return "";
 }

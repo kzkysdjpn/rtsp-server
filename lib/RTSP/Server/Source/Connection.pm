@@ -174,10 +174,6 @@ sub announce {
         return $self->push_response(403, 'Forbidden');
     }
 
-    if (1){
-        return $self->unauthorized;
-    }
-
     $self->debug("Got source announcement for " . $self->req_uri);
 
     # create mountpoint

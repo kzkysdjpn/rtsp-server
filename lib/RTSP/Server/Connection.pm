@@ -108,6 +108,13 @@ has 'server' => (
     handles => [qw/ next_rtp_start_port mounts trace debug info warn error /],
 );
 
+has 'class_name' => (
+    is => 'rw',
+    isa => 'Str',
+    default => "",
+    required => 1,
+);
+
 has 'realm' => (
     is => 'rw',
     isa => 'Str',
@@ -203,6 +210,9 @@ sub unauthorized {
     $self->push_response(401, "Unauthorized");
 }
 
+sub check_authorization_header {
+}
+
 sub push_ok {
     my ($self, $body) = @_;
     $self->push_response(200, 'OK', $body);
@@ -240,21 +250,28 @@ sub handle_request {
 
     # TODO: check auth
     my @allowed_methods = ($self->public_options, $self->private_options);
-    if (grep { lc $_ eq $method } @allowed_methods) {
+    unless (grep { lc $_ eq $method } @allowed_methods) {
+        $self->push_response(405, 'Method Not Allowed');
+        $self->reset;
+        return;
+    }
+    $DB::single=1;
+    if("options" eq $method) {
         my $ok = eval {
             $self->$method;
             1;
         };
-
         if (! $ok || $@) {
             $self->error("Error handling " . uc($method) . ": " .
                          ($@ || 'unknown error'));
         }
-    } else {
-        $self->push_response(405, 'Method Not Allowed');
+        $self->reset;
+        return;
     }
-
+    print $method . "\n";
+    $self->unauthorized;
     $self->reset;
+    return;
 }
 
 sub add_req_header {
