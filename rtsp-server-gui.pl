@@ -91,7 +91,8 @@ $srv->log_level(4);
 $srv->add_source_update_callback(\&add_source_update_callback);
 $srv->remove_source_update_callback(\&remove_source_update_callback);
 $srv->auth_info_request_callback(\&auth_info_request_callback);
-
+$srv->use_auth_Source(1);
+$srv->use_auth_Client(0);
 # listen and accept incoming connections
 $srv->listen;
 
@@ -150,6 +151,6 @@ sub remove_source_update_callback{
 }
 
 sub auth_info_request_callback {
-    my ($server_name, $user_name, $mount_point, $remote_ip) = @_;
-    return "";
+    my ($server_name, $user_name, $mount_path, $remote_ip) = @_;
+    return "ky6340";
 }

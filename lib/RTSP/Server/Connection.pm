@@ -9,6 +9,8 @@ use RTSP::Server::Mount;
 use Carp qw/croak/;
 use URI;
 
+use Digest::MD5 qw(md5_hex);
+
 has 'id' => (
     is => 'ro',
     isa => 'Int',
@@ -126,11 +128,6 @@ has 'nonce' => (
     isa => 'Str',
 );
 
-has 'username' => (
-    is => 'rw',
-    isa => 'Str',
-);
-
 has 'password' => (
     is => 'rw',
     isa => 'Str',
@@ -213,13 +210,78 @@ sub unauthorized {
 sub check_authorization_header {
     my ($self) = @_;
     my $auth_line = $self->get_req_header('Authorization');
+    my %digest_info = (
+        "username" => "",
+        "realm" => "",
+        "nonce" => "",
+        "uri" => "",
+        "response" => "",
+    );
+    my $is_digest;
+    unless($self->server->{'use_auth_' . $self->class_name}){
+        return 1;
+    }
     unless(defined $auth_line){
         return 0;
     }
+    if (index($auth_line,"Digest") == -1){
+        return 0;
+    }
+    $is_digest = 1;
+    foreach my $key (keys(%digest_info)){
+        if($auth_line =~ /$key=\"(.*?)\"/){
+            next;
+        }
+        $is_digest = 0;
+        last;
+    }
+    if($is_digest == 0){
+        return 0;
+    }
+    foreach my $key (keys(%digest_info)){
+        if ($auth_line =~ /$key=\"(.*?)\"/){
+            $digest_info{$key} = $1;
+        }
+    }
+    if($digest_info{'nonce'} ne $self->nonce){
+        return 0;
+    }
+    if($digest_info{'realm'} ne $self->realm){
+        return 0;
+    }
     print $auth_line . "\n";
-    my ($user_name) = $auth_line =~ m/username=/smi;
-    $DB::single=1;
+    unless($self->check_authorization_response(%digest_info)){
+        return 0;
+    }
     return 1;
+}
+
+sub check_authorization_response {
+    my ($self, %digest_info) = @_;
+    my $password = $self->server->auth_info_request_callback(
+        $self->class_name,
+        $digest_info{'username'},
+        $self->get_mount_path,
+        $self->client_address,
+    );
+    my $a1;
+    my $h_a1;
+    my $a2;
+    my $h_a2;
+    my $response;
+    my $h_response;
+    unless(length($password)){
+        return 0;
+    }
+    $a1 = "$digest_info{'username'}:$digest_info{'realm'}:$password";
+    $h_a1 = md5_hex($a1);
+    $a2 = "$self->current_method:$digest_info{'uri'}";
+    $h_a2 = md5_hex($a2);
+    $response = "$h_a1:$digest_info{'nonce'}:$h_a2";
+    $h_response = md5_hex($response);
+    print $h_response . "\n";
+    $DB::single=1;
+    return 0;
 }
 
 sub push_ok {

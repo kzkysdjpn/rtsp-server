@@ -127,6 +127,20 @@ has 'auth_info_request_callback' => (
     traits => [ 'NoGetopt'],
 );
 
+has 'use_auth_Source' => (
+    is => 'rw',
+    default => 0,
+    isa => 'Int',
+    traits => [ 'NoGetopt'],
+);
+
+has 'use_auth_Client' => (
+    is => 'rw',
+    default => 0,
+    isa => 'Int',
+    traits => [ 'NoGetopt'],
+);
+
 sub client_count {
     my ($self) = @_;
 
@@ -163,7 +177,6 @@ sub listen {
     my ($self) = @_;
 
     print "Starting RTSP server, log level = " . $self->log_level . "\n";
-
     my $source_server = $self->start_source_server;
     my $client_server = $self->start_client_server;
 }
