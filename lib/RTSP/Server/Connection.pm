@@ -258,30 +258,39 @@ sub check_authorization_header {
 
 sub check_authorization_response {
     my ($self, %digest_info) = @_;
-    my $password = $self->server->auth_info_request_callback(
-        $self->class_name,
-        $digest_info{'username'},
-        $self->get_mount_path,
-        $self->client_address,
-    );
     my $a1;
     my $h_a1;
     my $a2;
     my $h_a2;
     my $response;
     my $h_response;
+    my $method;
+    my $mount_full_path = $self->get_mount_path;
+    my (undef, $mount_path) = split(/\//, $mount_full_path);
+    my $password = $self->server->auth_info_request_callback->(
+        $self->class_name,
+        $digest_info{'username'},
+        $mount_path,
+        $self->client_address,
+    );
+
     unless(length($password)){
         return 0;
     }
     $a1 = "$digest_info{'username'}:$digest_info{'realm'}:$password";
     $h_a1 = md5_hex($a1);
-    $a2 = "$self->current_method:$digest_info{'uri'}";
+
+    $method = $self->current_method;
+    $a2 = "$method:$digest_info{'uri'}";
     $h_a2 = md5_hex($a2);
+
     $response = "$h_a1:$digest_info{'nonce'}:$h_a2";
     $h_response = md5_hex($response);
-    print $h_response . "\n";
-    $DB::single=1;
-    return 0;
+
+    if($h_response ne $digest_info{'response'}){
+        return 0;
+    }
+    return 1;
 }
 
 sub push_ok {

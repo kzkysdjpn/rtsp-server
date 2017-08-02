@@ -103,6 +103,8 @@ $setup_config = undef;
 while($signal == 0){
     $cv = AnyEvent->condvar;
     $cv->recv;
+    $srv->close_server;
+    undef $srv;
     print "signal = " . $signal . "\n";
     $cv = undef;
     if($signal != 0){
@@ -114,8 +116,6 @@ while($signal == 0){
         $signal = 1;
         next;
     }
-    $srv->close_server;
-    undef $srv;
     sleep 1;
     $srv = RTSP::Server->new;
     $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
@@ -152,5 +152,6 @@ sub remove_source_update_callback{
 
 sub auth_info_request_callback {
     my ($server_name, $user_name, $mount_path, $remote_ip) = @_;
-    return "ky6340";
+    print "mount_path = $mount_path\n";
+    return "hoge";
 }
