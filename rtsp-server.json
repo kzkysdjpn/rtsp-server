@@ -5,7 +5,7 @@
     "RTP_START_PORT"       : "6970",
     "RTSP_CLIENT_PORT"     : "5545",
     "ON_RECEIVE_COMMAND"   : "C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%DateTime%>.mp4",
-    "RTSP_SOURCE_PORT"     : "8554",
+    "RTSP_SOURCE_PORT"     : "5544",
     "SOURCE_AUTH_USERNAME" : "username",
     "INITIAL_LOAD"         : true
 }
