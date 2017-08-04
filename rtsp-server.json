@@ -1,11 +1,13 @@
 {
-    "ON_DBLCLICK_COMMAND"  : "C:\\ffmpeg\\bin\\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>",
-    "SOURCE_AUTH_PASSWORD" : "password",
-    "USE_SOURCE_AUTH"      : false,
-    "RTP_START_PORT"       : "6970",
-    "RTSP_CLIENT_PORT"     : "5545",
-    "ON_RECEIVE_COMMAND"   : "C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%DateTime%>.mp4",
-    "RTSP_SOURCE_PORT"     : "5544",
-    "SOURCE_AUTH_USERNAME" : "username",
-    "INITIAL_LOAD"         : true
+    "ON_DBLCLICK_COMMAND"   : "C:\\ffmpeg\\bin\\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>",
+    "USE_SOURCE_AUTH"       : false,
+    "RTP_START_PORT"        : "6970",
+    "RTSP_CLIENT_PORT"      : "5545",
+    "ON_RECEIVE_COMMAND"    : "C:\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy C:\\rtsp_rec_data\\<%SourceName%>_<%DateTime%>.mp4",
+    "RTSP_SOURCE_PORT"      : "5544",
+    "INITIAL_LOAD"          : true,
+    "SOURCE_AUTH_INFO_LIST" : [
+                                  {"USERNAME" : "hoge",     "PASSWORD" : "fuga",     "MOUNT_PATH" : "title"},
+                                  {"USERNAME" : "username", "PASSWORD" : "password", "MOUNT_PATH" : "live"}
+                              ]
 }
