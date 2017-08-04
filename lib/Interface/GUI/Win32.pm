@@ -436,18 +436,10 @@ sub setup_setting_dialog {
 		-text   => "",
 		-left   => 150,
 		-top    => 48,
-		-width  => 298,
+		-width  => 340,
 		-height => 80,
 		-valign => 'center',
 		-multiline => 1,
-	);
-	$self->setting_dialog->AddButton(
-		-name   => "SettingViewOnDblClickCommandButton",
-		-text   => "?",
-		-left   => 452,
-		-top    => 48,
-		-width  => 36,
-		-height => 80,
 	);
 
 	$self->setting_dialog->AddLabel(
@@ -464,18 +456,10 @@ sub setup_setting_dialog {
 		-text   => "",
 		-left   => 150,
 		-top    => 132,
-		-width  => 298,
+		-width  => 340,
 		-height => 80,
 		-valign => 'center',
 		-multiline => 1,
-	);
-	$self->setting_dialog->AddButton(
-		-name   => "SettingViewOnReceiveCommandButton",
-		-text   => "?",
-		-left   => 452,
-		-top    => 132,
-		-width  => 36,
-		-height => 80,
 	);
 
 	$self->setting_dialog->AddLabel(
