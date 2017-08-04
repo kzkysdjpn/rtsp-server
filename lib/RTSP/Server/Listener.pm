@@ -106,7 +106,7 @@ sub listen {
             $handle->destroy;
             undef $handle;
         };
-
+        $conn->close_accept($cleanup);
         $handle = new AnyEvent::Handle
             fh => $fh,
             on_eof => sub {

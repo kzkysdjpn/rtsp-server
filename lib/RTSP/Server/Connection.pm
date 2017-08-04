@@ -126,11 +126,27 @@ has 'realm' => (
 has 'nonce' => (
     is => 'rw',
     isa => 'Str',
+    default => "",
+);
+
+has 'client_nonce' => (
+    is => 'rw',
+    isa => 'Str',
+    default => "",
 );
 
 has 'password' => (
     is => 'rw',
     isa => 'Str',
+);
+
+has 'close_accept' => (
+    is => 'rw',
+    default => sub {
+        sub {
+            return;
+        }
+    },
 );
 
 # should return a list of supported methods
@@ -243,6 +259,7 @@ sub check_authorization_header {
             $digest_info{$key} = $1;
         }
     }
+    $self->client_nonce($digest_info{'nonce'});
     if($digest_info{'nonce'} ne $self->nonce){
         return 0;
     }
@@ -350,6 +367,10 @@ sub handle_request {
     unless($self->check_authorization_header){
         $self->unauthorized;
         $self->reset;
+        unless(length($self->client_nonce)){
+            return;
+        }
+        $self->cleanup;
         return;
     }
     my $ok = eval {
