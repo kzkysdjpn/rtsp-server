@@ -25,6 +25,10 @@ has 'app_list_view' => (
 	is => 'rw',
 );
 
+has 'auth_list_view' => (
+	is => 'rw',
+);
+
 has 'server_address_textfield' => (
 	is => 'rw',
 );
@@ -378,8 +382,6 @@ sub setup_setting_dialog {
 		"ON_RECEIVE_COMMAND",
 		"RTP_START_PORT",
 		"USE_SOURCE_AUTH",
-		"SOURCE_AUTH_USERNAME",
-		"SOURCE_AUTH_PASSWORD",
 	);
 	my $cancel;
 
@@ -497,6 +499,7 @@ sub setup_setting_dialog {
 		-valign => 'center',
 	);
 
+	# Authentication Parameter.
 	$self->setting_dialog->AddCheckbox(
 		-name   => "USE_SOURCE_AUTH",
 		-text   => "Use Source Authentication",
@@ -506,44 +509,27 @@ sub setup_setting_dialog {
 		-height => 32,
 		-align  => 'center',
 	);
-
-	$self->setting_dialog->AddLabel(
-		-name   => "SettingViewSourceAuthUserNameLabel",
-		-text   => "Source User Name",
-		-left   => 2,
-		-top    => 300,
-		-width  => 140,
-		-height => 32,
-		-align  => 'center',
+	$self->auth_list_view(
+		$self->setting_dialog->AddListView(
+			-name          => "AuthUserInfoView",
+			-text          => "&Authentication List View",
+			-left          => 2,
+			-top           => 300,
+			-width         => 486,
+			-height        => 220,
+			-vscroll       => 1,
+			-multisel      => 0,
+			-gridlines     => 1,
+			-fullrowselect => 0,
+			-onClick       => sub {
+				return;
+			},
+		)
 	);
-	$self->setting_dialog->AddTextfield(
-		-name   => "SOURCE_AUTH_USERNAME",
-		-text   => "",
-		-left   => 150,
-		-top    => 300,
-		-width  => 340,
-		-height => 32,
-		-valign => 'center',
-	);
-
-	$self->setting_dialog->AddLabel(
-		-name   => "SettingViewSourceAuthPasswordLabel",
-		-text   => "Source Password",
-		-left   => 2,
-		-top    => 336,
-		-width  => 140,
-		-height => 32,
-		-align  => 'center',
-	);
-	$self->setting_dialog->AddTextfield(
-		-name   => "SOURCE_AUTH_PASSWORD",
-		-text   => "",
-		-left   => 150,
-		-top    => 336,
-		-width  => 340,
-		-height => 32,
-		-valign => 'center',
-	);
+	$self->auth_list_view->{gui_handle} = $self;
+	$self->auth_list_view->InsertColumn(-item => 0, -text => "User Name", -width => 180);
+	$self->auth_list_view->InsertColumn(-item => 1, -text => "Password", -width => 180);
+	$self->auth_list_view->InsertColumn(-item => 2, -text => "Mount Path", -width => 120);
 
 	$cancel = $self->setting_dialog->AddButton(
 		-name => "SettingView",
@@ -584,8 +570,6 @@ sub apply_setting {
 		"ON_DBLCLICK_COMMAND",
 		"ON_RECEIVE_COMMAND",
 		"RTP_START_PORT",
-		"SOURCE_AUTH_USERNAME",
-		"SOURCE_AUTH_PASSWORD",
 	);
 	my @checkbox_fields = (
 		"USE_SOURCE_AUTH",
