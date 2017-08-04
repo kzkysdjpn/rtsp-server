@@ -371,7 +371,6 @@ sub handle_request {
             return;
         }
         $self->cleanup;
-        $self->close_accept->();
         return;
     }
     my $ok = eval {
