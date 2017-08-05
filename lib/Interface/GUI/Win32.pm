@@ -132,6 +132,14 @@ has 'setting_cancel' => (
 	is => 'rw',
 );
 
+has 'source_remove_user' => (
+	is => 'rw',
+);
+
+has 'source_add_user' => (
+	is => 'rw',
+);
+
 sub open {
 	my ($self) = @_;
 
@@ -340,6 +348,20 @@ sub update_address_button {
 	return;
 }
 
+sub load_source_user_info {
+	my ($self, $user_info) = @_;
+	for my $href ( @$user_info ) {
+		$self->{gui_handle}->auth_list_view->InsertItem(
+			-text => [
+				$$href{USERNAME},
+				$$href{MOUNT_PATH}
+			]
+		);
+	}
+	$self->{gui_handle}->auth_list_view->{source_auth_list} = $user_info;
+	1;
+}
+
 sub open_setting_dialog {
 	my ($self) = @_;
 	my $config_hash;
@@ -347,6 +369,7 @@ sub open_setting_dialog {
 		"INITIAL_LOAD",
 		"USE_SOURCE_AUTH",
 		"RTSP_CLIENT_PORT",
+		"SOURCE_AUTH_INFO_LIST",
 	);
 	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
 	foreach my $key(keys(%{$config_hash})){
@@ -369,6 +392,7 @@ sub open_setting_dialog {
 	}else{
 		$widget->SetCheck(0);
 	}
+	load_source_user_info($self, $config_hash->{SOURCE_AUTH_INFO_LIST});
 	$self->{gui_handle}->setting_dialog->DoModal();
 	return;
 }
@@ -493,27 +517,191 @@ sub setup_setting_dialog {
 		-height => 32,
 		-align  => 'center',
 	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SourceUserNameLabel",
+		-text   => "User Name",
+		-left   => 2,
+		-top    => 300,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	my $source_user = $self->setting_dialog->AddTextfield(
+		-name   => "SOURCE_USER_NAME",
+		-text   => "",
+		-left   => 2,
+		-top    => 332,
+		-width  => 180,
+		-height => 32,
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SourcePasswordLabel",
+		-text   => "Password",
+		-left   => 184,
+		-top    => 300,
+		-width  => 180,
+		-height => 32,
+		-align  => 'center',
+	);
+	my $source_pass = $self->setting_dialog->AddTextfield(
+		-name     => "SOURCE_PASSWORD",
+		-text     => "",
+		-left     => 184,
+		-top      => 332,
+		-width    => 178,
+		-height   => 32,
+		-password => 1,
+	);
+
+	$self->setting_dialog->AddLabel(
+		-name   => "SourceMountPathLabel",
+		-text   => "Mount Path",
+		-left   => 364,
+		-top    => 300,
+		-width  => 120,
+		-height => 32,
+		-align  => 'center',
+	);
+	my $source_mount = $self->setting_dialog->AddTextfield(
+		-name     => "SOURCE_MOUNT_PATH",
+		-text     => "",
+		-left     => 364,
+		-top      => 332,
+		-width    => 120,
+		-height   => 32,
+	);
+	my $remove_user = $self->setting_dialog->AddButton(
+		-name => "SOURCE_REMOVE_USER",
+		-text => "Remove User",
+		-top => 368,
+		-left => 2,
+		-width => 238,
+		-height => 32,
+		-onClick => sub {
+			my ($self) = @_;
+			1;
+		},
+	);
+	$remove_user->{gui_handle} = $self;
+	$self->source_remove_user($remove_user);
+
+	my $add_user = $self->setting_dialog->AddButton(
+		-name => "SOURCE_ADD_USER",
+		-text => "Add User",
+		-top => 368,
+		-left => 242,
+		-width => 240,
+		-height => 32,
+		-onClick => sub {
+			my ($self) = @_;
+			my $auth_list;
+			my $is_conflict_user;
+			my $list_view = $self->{gui_handle}->auth_list_view;
+			my @widgets = (
+				$list_view->{SOURCE_USERNAME},
+				$list_view->{SOURCE_PASSWORD},
+				$list_view->{SOURCE_MOUNT},
+			);
+			my $error;
+			unless ( defined $list_view ) {
+				return;
+			}
+			$auth_list = $list_view->{source_auth_list};
+			unless ( defined $auth_list ){
+				return;
+			}
+			$is_conflict_user = 0;
+			foreach my $href ( @$auth_list ) {
+				if ( $widgets[0]->Text() ne $$href{USERNAME} ){
+					next;
+				}
+				$is_conflict_user = 1;
+				last;
+			}
+			if($is_conflict_user){
+				Win32::GUI::MessageBox($self, "Conflict exist user name.", "Error", 0x001000);
+				return;
+			}
+			$error = 0;
+			for(my $i = 0; $i < 2; $i++) {
+				if( length($widgets[$i]->Text()) ){
+					next;
+				}
+				$error = 1;
+				last;
+			}
+			if($error){
+				Win32::GUI::MessageBox($self, "Empty user name or password.", "Error", 0x001000);
+				return;
+			}
+			my %new_user = (
+				"USERNAME" => $widgets[0]->Text(),
+				"PASSWORD" => $widgets[1]->Text(),
+				"MOUNT_PATH" => $widgets[2]->Text(),
+			);
+			push(@$auth_list, %new_user);
+			$DB::single=1;
+			1;
+		},
+	);
+	$add_user->{gui_handle} = $self;
+	$self->source_add_user($add_user);
+
 	$self->auth_list_view(
 		$self->setting_dialog->AddListView(
 			-name          => "AuthUserInfoView",
 			-text          => "&Authentication List View",
 			-left          => 2,
-			-top           => 300,
+			-top           => 408,
 			-width         => 486,
-			-height        => 220,
+			-height        => 112,
 			-vscroll       => 1,
 			-multisel      => 0,
 			-gridlines     => 1,
-			-fullrowselect => 0,
+			-fullrowselect => 1,
 			-onClick       => sub {
+				my $index;
+				my $aref;
+				my $href;
+				my $auth_list;
+				$auth_list = $self->auth_list_view;
+				$index = $auth_list->SelectedItems();
+				unless (defined $index){
+					return;
+				}
+				$aref = $auth_list->{source_auth_list};
+				unless(defined $aref){
+					return;
+				}
+				$href = @$aref[$index];
+				my @widgets = (
+					$self->auth_list_view->{SOURCE_USERNAME},
+					$self->auth_list_view->{SOURCE_PASSWORD},
+					$self->auth_list_view->{SOURCE_MOUNT},
+				);
+				my @config_name = (
+					'USERNAME',
+					'PASSWORD',
+					'MOUNT_PATH',
+				);
+				foreach my $i(0 .. $#widgets){
+					$widgets[$i]->SelectAll;
+					$widgets[$i]->Clear;
+					$widgets[$i]->Append($$href{$config_name[$i]});
+				}
 				return;
 			},
 		)
 	);
 	$self->auth_list_view->{gui_handle} = $self;
-	$self->auth_list_view->InsertColumn(-item => 0, -text => "User Name", -width => 180);
-	$self->auth_list_view->InsertColumn(-item => 1, -text => "Password", -width => 180);
-	$self->auth_list_view->InsertColumn(-item => 2, -text => "Mount Path", -width => 120);
+	$self->auth_list_view->InsertColumn(-item => 0, -text => "User Name", -width => 240);
+	$self->auth_list_view->InsertColumn(-item => 2, -text => "Mount Path", -width => 240);
+
+	$self->auth_list_view->{SOURCE_USERNAME} = $source_user;
+	$self->auth_list_view->{SOURCE_PASSWORD} = $source_pass;
+	$self->auth_list_view->{SOURCE_MOUNT} = $source_mount;
 
 	$cancel = $self->setting_dialog->AddButton(
 		-name => "SettingView",

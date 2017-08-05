@@ -86,6 +86,7 @@ my $count = 0;
 my $srv = RTSP::Server->new;
 $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
 $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
+$srv->rtp_start_port($setup_config->config_data->{RTP_START_PORT});
 $srv->log_level(4);
 
 $srv->add_source_update_callback(\&add_source_update_callback);
@@ -120,6 +121,7 @@ while($signal == 0){
     $srv = RTSP::Server->new;
     $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
     $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
+    $srv->rtp_start_port($setup_config->config_data->{RTP_START_PORT});
     $srv->log_level(4);
 
     $srv->add_source_update_callback(\&add_source_update_callback);
