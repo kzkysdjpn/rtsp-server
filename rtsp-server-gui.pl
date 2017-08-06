@@ -92,10 +92,16 @@ $srv->log_level(4);
 $srv->add_source_update_callback(\&add_source_update_callback);
 $srv->remove_source_update_callback(\&remove_source_update_callback);
 $srv->auth_info_request_callback(\&auth_info_request_callback);
-$srv->use_auth_Source(1);
+if( $setup_config->config_data->{USE_SOURCE_AUTH} ){
+    $srv->use_auth_Source(1);
+}else{
+    $srv->use_auth_Source(0);
+}
 $srv->use_auth_Client(0);
 # listen and accept incoming connections
 $srv->listen;
+
+my $auth_list = $setup_config->config_data->{SOURCE_AUTH_INFO_LIST};
 
 $setup_config->close;
 $setup_config = undef;
@@ -117,11 +123,18 @@ while($signal == 0){
         $signal = 1;
         next;
     }
-    sleep 1;
+    sleep 1; # Reboot process need interval......
     $srv = RTSP::Server->new;
     $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
     $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
     $srv->rtp_start_port($setup_config->config_data->{RTP_START_PORT});
+    if( $setup_config->config_data->{USE_SOURCE_AUTH} ){
+        $srv->use_auth_Source(1);
+    }else{
+        $srv->use_auth_Source(0);
+    }
+    $srv->use_auth_Client(0);
+    $auth_list = $setup_config->config_data->{SOURCE_AUTH_INFO_LIST};
     $srv->log_level(4);
 
     $srv->add_source_update_callback(\&add_source_update_callback);
@@ -154,6 +167,24 @@ sub remove_source_update_callback{
 
 sub auth_info_request_callback {
     my ($server_name, $user_name, $mount_path, $remote_ip) = @_;
-    print "mount_path = $mount_path\n";
-    return "hoge";
+    my $password = "";
+    my $mount = "";
+    foreach my $href ( @$auth_list ) {
+        if ( $$href{USERNAME} ne $user_name ){
+            next;
+        }
+        $password = $$href{PASSWORD};
+        $mount = $$href{MOUNT_PATH};
+        last;
+    }
+    unless ( length($password) ){
+        return $password;
+    }
+    unless ( length($mount) ){
+        return $password;
+    }
+    if ( $mount ne $mount_path ){
+        return "";
+    }
+    return $password;
 }

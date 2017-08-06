@@ -266,7 +266,6 @@ sub check_authorization_header {
     if($digest_info{'realm'} ne $self->realm){
         return 0;
     }
-    print $auth_line . "\n";
     unless($self->check_authorization_response(%digest_info)){
         return 0;
     }
