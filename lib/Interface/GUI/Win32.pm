@@ -350,6 +350,13 @@ sub update_address_button {
 
 sub load_source_user_info {
 	my ($self, $user_info) = @_;
+	$self->{gui_handle}->auth_list_view->DeleteAllItems();
+	$self->{gui_handle}->auth_list_view->{SOURCE_USERNAME}->SelectAll;
+	$self->{gui_handle}->auth_list_view->{SOURCE_USERNAME}->Clear;
+	$self->{gui_handle}->auth_list_view->{SOURCE_PASSWORD}->SelectAll;
+	$self->{gui_handle}->auth_list_view->{SOURCE_PASSWORD}->Clear;
+	$self->{gui_handle}->auth_list_view->{SOURCE_MOUNT}->SelectAll;
+	$self->{gui_handle}->auth_list_view->{SOURCE_MOUNT}->Clear;
 	for my $href ( @$user_info ) {
 		$self->{gui_handle}->auth_list_view->InsertItem(
 			-text => [
@@ -581,6 +588,22 @@ sub setup_setting_dialog {
 		-height => 32,
 		-onClick => sub {
 			my ($self) = @_;
+			my $auth_list;
+			my $list_view = $self->{gui_handle}->auth_list_view;
+			unless ( defined $list_view ) {
+				return;
+			}
+			$auth_list = $list_view->{source_auth_list};
+			unless ( defined $auth_list ){
+				return;
+			}
+			my $index = $list_view->SelectedItems();
+			unless ( defined $index ){
+				return;
+			}
+			$list_view->DeleteItem($index);
+			splice(@$auth_list, $index, 1);
+			$list_view->{source_auth_list} = $auth_list;
 			1;
 		},
 	);
@@ -636,13 +659,22 @@ sub setup_setting_dialog {
 				Win32::GUI::MessageBox($self, "Empty user name or password.", "Error", 0x001000);
 				return;
 			}
+
+			$list_view->InsertItem(
+				-text => [
+					$widgets[0]->Text(),
+					$widgets[2]->Text(),
+				]
+			);
+
 			my %new_user = (
-				"USERNAME" => $widgets[0]->Text(),
-				"PASSWORD" => $widgets[1]->Text(),
+				"USERNAME"   => $widgets[0]->Text(),
+				"PASSWORD"   => $widgets[1]->Text(),
 				"MOUNT_PATH" => $widgets[2]->Text(),
 			);
-			push(@$auth_list, %new_user);
-			$DB::single=1;
+			push(@$auth_list, \%new_user);
+			$list_view->{source_auth_list} = $auth_list;
+
 			1;
 		},
 	);
@@ -766,7 +798,9 @@ sub apply_setting {
 
 	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
 
+	$config_hash->{SOURCE_AUTH_INFO_LIST} = $self->{gui_handle}->auth_list_view->{source_auth_list};
 	$self->{gui_handle}->config_data_write_callback->($config_hash);
+
 	$self->{gui_handle}->setting_cancel->Show();
 	$self->{gui_handle}->config_data($config_hash);
 	$self->{gui_handle}->reboot_configration();
