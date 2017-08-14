@@ -2,6 +2,7 @@ package Interface::GUI::Win32;
 
 use Moose;
 use Win32::GUI qw( WM_CLOSE WM_USER);
+use Win32::Process;
 use Win32;
 use threads;
 
@@ -137,6 +138,17 @@ has 'source_remove_user' => (
 );
 
 has 'source_add_user' => (
+	is => 'rw',
+);
+
+has 'on_receive_process_list' => (
+	is => 'rw',
+	isa => 'HashRef',
+	default => sub { {} },
+	lazy => 1,
+);
+
+has 'on_dblclk_process' => (
 	is => 'rw',
 );
 
@@ -290,9 +302,17 @@ sub setup_main_window {
 				my $index;
 				my $gui_handle;
 				my $dbl_clk_cmd;
+				my $newProc;
+				my $oldProc;
 				$index = $self->SelectedItems();
 				unless (defined $index){
 					return;
+				}
+				$oldProc = $self->{gui_handle}->on_dblclk_process;
+				if (defined $oldProc ){
+					$oldProc->Kill(0);
+					$oldProc = undef;
+					$self->{gui_handle}->on_dblclk_process($oldProc);
 				}
 #				system("taskkill /im vlc.exe");
 				$dbl_clk_cmd = $self->{gui_handle}->request_replace_code_callback->(
@@ -302,7 +322,9 @@ sub setup_main_window {
 					date_time_string(),
 					$self->GetItemText($index, 4)
 				);
-				system("start " . $dbl_clk_cmd);
+				my ($exec_file, $args) = split(/ /, $dbl_clk_cmd, 2);
+				Win32::Process::Create($newProc, $exec_file, " " . $args, 0, CREATE_NO_WINDOW, ".") || die ErrorReport();
+				$self->{gui_handle}->on_dblclk_process($newProc);
 				return;
 			},
 		)
@@ -311,7 +333,7 @@ sub setup_main_window {
 	$self->app_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
 	$self->app_list_view->InsertColumn(-item => 1, -text => "Host Addr.", -width => 150);
 	$self->app_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 150);
-	$self->app_list_view->InsertColumn(-item => 3, -text => "Rec.", -width => 50);
+	$self->app_list_view->InsertColumn(-item => 3, -text => "Cmd.", -width => 50);
 	$self->app_list_view->InsertColumn(-item => 4, -text => "Cnt.", -width => 33);
 	$self->app_list_view->Select(-1);
 
@@ -823,6 +845,8 @@ sub check_rtsp_source_and_client_port {
 
 sub on_request_hook {
 	my ($self, $len, $data) = @_;
+	my $item;
+	my $newProc;
 	my $frozen = unpack("P$len", pack('Q', $data));
 	my $result = thaw $frozen;
 	my $source_name = substr $$result{APPLICATION}, 1;
@@ -835,7 +859,11 @@ sub on_request_hook {
 		if ($find_item < 0){
 			return;
 		}
+#		system('taskkill /im "' . $exec_name . '"');
+		my $oldProc = $self->{gui_handle}->on_receive_process_list->{$source_name};
+		$oldProc->Kill(0);
 		$self->AppListView->DeleteItem($find_item);
+		delete($self->{gui_handle}->on_receive_process_list->{$source_name});
 		return;
 	}
 
@@ -843,16 +871,23 @@ sub on_request_hook {
 	$year += 1900;
 	$mon += 1;
 
-	my $pid = exec_on_receive_command($self, $source_name, $$result{COUNT});
+	$newProc = exec_on_receive_command($self, $source_name, $$result{COUNT});
 	# Add application process.
+	$self->{gui_handle}->on_receive_process_list->{$source_name} = $newProc;
 	my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
-	my $ret = $self->AppListView->InsertItem(-text => [$source_name, $$result{HOST}, $date, $pid, $$result{COUNT}]);
+	my $ret = $self->AppListView->InsertItem(-text => [$source_name, $$result{HOST}, $date, $newProc->GetProcessID(), $$result{COUNT}]);
+	return;
+}
+
+sub ErrorReport {
+	print Win32::FormatMessage(Win32::GetLastError());
 	return;
 }
 
 sub exec_on_receive_command {
 	my ($self, $source_name, $source_count) = @_;
 	my $on_recv_cmd;
+	my $newProc;
 	$on_recv_cmd = $self->{gui_handle}->request_replace_code_callback->(
 					$self->{gui_handle}->config_data->{ON_RECEIVE_COMMAND},
 					$source_name,
@@ -860,8 +895,9 @@ sub exec_on_receive_command {
 					date_time_string(),
 					$source_count
 		);
-	my $pid = system(1, "start " . $on_recv_cmd);
-	return $pid;
+	my ($exec_file, $args) = split(/ /, $on_recv_cmd, 2);
+	Win32::Process::Create($newProc, $exec_file, " " . $args, 0, CREATE_NO_WINDOW, ".") || die ErrorReport();
+	return $newProc;
 }
 
 sub date_time_string {
