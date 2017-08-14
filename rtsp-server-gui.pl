@@ -87,7 +87,7 @@ my $srv = RTSP::Server->new;
 $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
 $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});
 $srv->rtp_start_port($setup_config->config_data->{RTP_START_PORT});
-$srv->log_level(4);
+$srv->log_level(0);
 
 $srv->add_source_update_callback(\&add_source_update_callback);
 $srv->remove_source_update_callback(\&remove_source_update_callback);
@@ -112,7 +112,6 @@ while($signal == 0){
     $cv->recv;
     $srv->close_server;
     undef $srv;
-    print "signal = " . $signal . "\n";
     $cv = undef;
     if($signal != 0){
         next;
@@ -135,7 +134,7 @@ while($signal == 0){
     }
     $srv->use_auth_Client(0);
     $auth_list = $setup_config->config_data->{SOURCE_AUTH_INFO_LIST};
-    $srv->log_level(4);
+    $srv->log_level(0);
 
     $srv->add_source_update_callback(\&add_source_update_callback);
     $srv->remove_source_update_callback(\&remove_source_update_callback);
