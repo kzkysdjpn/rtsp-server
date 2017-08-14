@@ -3,7 +3,6 @@ package Interface::ConfigFile;
 use Moose;
 use JSON::PP;
 use Encode;
-
 has 'config_file_path' => (
 	is => 'rw',
 	default => 'C:\\perl_test\\rtsp-server\\rtsp-server.json',
@@ -35,8 +34,9 @@ sub open {
 		local $/ = undef;
 		$json = <$fh>;
 		CORE::close $fh;
-		$tmp = Encode::encode('utf8', decode('sjis', $json));
-		$data = JSON::PP::decode_json($tmp);
+#		$tmp = Encode::encode('utf8', decode('cp932', $json));
+#		$data = JSON::PP::decode_json($tmp);
+		$data = JSON::PP::decode_json($json);
 	};
 	if($@){
 		print STDERR ("Invalid JSON decode operation." . $@ .  "\n");
