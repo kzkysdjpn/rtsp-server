@@ -5,7 +5,7 @@ use JSON::PP;
 use Encode;
 has 'config_file_path' => (
 	is => 'rw',
-	default => 'C:\\perl_test\\rtsp-server\\rtsp-server.json',
+	default => sub {return "$FindBin::Bin/rtsp-server.json"},
 );
 
 has 'key_name' => (
