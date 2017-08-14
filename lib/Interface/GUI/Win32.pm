@@ -215,7 +215,6 @@ sub open_gui_widget {
 	}
 
 	Win32::GUI::Dialog();
-	exit(0);
 
 	return;
 }
