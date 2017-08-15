@@ -65,13 +65,18 @@ $gui->config_data_write_callback(sub {
     return;
 });
 
-$gui->configuration_reboot_callback(sub {
+$gui->signal_reboot_callback(sub {
     $signal	= 0;
     $cv->send;
     return;
 });
 
-$gui->window_terminate_callback(\&close_event);
+$gui->signal_terminate_callback(sub {
+    $signal = 1;
+    $cv->send;
+    return;
+});
+
 $gui->config_data($setup_config->config_data);
 $gui->open;
 
@@ -145,22 +150,16 @@ while($signal == 0){
 }
 $gui->close;
 
-sub close_event {
-    $signal = 1;
-    $cv->send;
-    return;
-}
-
 sub add_source_update_callback{
     my ($mount) = @_;
     $count++;
-    $gui->add_application($mount, $count);
+    $gui->add_source($mount, $count);
     return;
 }
 
 sub remove_source_update_callback{
     my ($path) = @_;
-    $gui->remove_application($path, $count);
+    $gui->remove_source($path, $count);
     return;
 }
 

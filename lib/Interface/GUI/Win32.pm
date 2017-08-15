@@ -46,7 +46,7 @@ has 'mw_width' => (
 	default => 400,
 );
 
-has 'window_terminate_callback' => (
+has 'signal_terminate_callback' => (
 	is => 'rw',
 	default => sub {
 		sub {
@@ -55,7 +55,7 @@ has 'window_terminate_callback' => (
 	},
 );
 
-has 'configuration_reboot_callback' => (
+has 'signal_reboot_callback' => (
 	is => 'rw',
 	default => sub {
 		sub {
@@ -174,8 +174,8 @@ sub open {
 			}
 			next unless $buf;
 			my @callback = (
-				$self->configuration_reboot_callback,
-				$self->window_terminate_callback,
+				$self->signal_reboot_callback,
+				$self->signal_terminate_callback,
 			);
 			my $result = thaw $buf;
 			$len = $#callback;
@@ -283,8 +283,8 @@ sub setup_main_window {
 
 	$self->app_list_view(
 		$self->main_window->AddListView(
-			-name => "AppListView",
-			-text => "&App List View",
+			-name => "SrcListView",
+			-text => "&Src List View",
 			-top => 0,
 			-left => 2,
 			-vscroll => 1,
@@ -329,7 +329,7 @@ sub setup_main_window {
 		)
 	);
 	$self->app_list_view->{gui_handle} = $self;
-	$self->app_list_view->InsertColumn(-item => 0, -text => "App. Name", -width => 100);
+	$self->app_list_view->InsertColumn(-item => 0, -text => "Src. Name", -width => 100);
 	$self->app_list_view->InsertColumn(-item => 1, -text => "Host Addr.", -width => 150);
 	$self->app_list_view->InsertColumn(-item => 2, -text => "Start Time", -width => 150);
 	$self->app_list_view->InsertColumn(-item => 3, -text => "Cmd.", -width => 50);
@@ -848,10 +848,10 @@ sub on_request_hook {
 	my $newProc;
 	my $frozen = unpack("P$len", pack('Q', $data));
 	my $result = thaw $frozen;
-	my $source_name = substr $$result{APPLICATION}, 1;
+	my $source_name = substr $$result{SOURCE_NAME}, 1;
 
-	if($$result{OPS} == 0){ # Remove application process.
-		my $find_item = $self->AppListView->FindItem(
+	if($$result{OPS} == 0){ # Remove source process.
+		my $find_item = $self->SrcListView->FindItem(
 			-1,
 			-string => $source_name,
 		);
@@ -861,20 +861,20 @@ sub on_request_hook {
 #		system('taskkill /im "' . $exec_name . '"');
 		my $oldProc = $self->{gui_handle}->on_receive_process_list->{$source_name};
 		$oldProc->Kill(0);
-		$self->AppListView->DeleteItem($find_item);
+		$self->SrcListView->DeleteItem($find_item);
 		delete($self->{gui_handle}->on_receive_process_list->{$source_name});
 		return;
 	}
 
+	# Add source process.
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	$year += 1900;
 	$mon += 1;
 
 	$newProc = exec_on_receive_command($self, $source_name, $$result{COUNT});
-	# Add application process.
 	$self->{gui_handle}->on_receive_process_list->{$source_name} = $newProc;
 	my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
-	my $ret = $self->AppListView->InsertItem(-text => [$source_name, $$result{HOST}, $date, $newProc->GetProcessID(), $$result{COUNT}]);
+	my $ret = $self->SrcListView->InsertItem(-text => [$source_name, $$result{HOST}, $date, $newProc->GetProcessID(), $$result{COUNT}]);
 	return;
 }
 
@@ -917,16 +917,16 @@ sub clear_application {
 	return;
 }
 
-sub add_application {
+sub add_source {
 	my ($self, $mount, $count) = @_;
 
 	my $window = Win32::GUI::FindWindow('', $self->main_window_title);
 	my $data = {
 		# Arbitary Defined
-		# 0 - Remove Application
-		# 1 - Add Application
+		# 0 - Remove Source
+		# 1 - Add Source
 		"OPS" => 1,
-		"APPLICATION" => $mount->path,
+		"SOURCE_NAME" => $mount->path,
 		"HOST" => $mount->source_host,
 		"COUNT" => $count,
 	};
@@ -935,16 +935,16 @@ sub add_application {
 	return;
 }
 
-sub remove_application {
+sub remove_source {
 	my ($self, $app_path, $count) = @_;
 
 	my $window = Win32::GUI::FindWindow('', $self->main_window_title);
 	my $data = {
 		# Arbitary Defined
-		# 0 - Remove Application
-		# 1 - Add Application
+		# 0 - Remove Source
+		# 1 - Add Source
 		"OPS" => 0,
-		"APPLICATION" => $app_path,
+		"SOURCE_NAME" => $app_path,
 		"HOST" => "",
 		"COUNT" => $count,
 	};
