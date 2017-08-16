@@ -16,6 +16,8 @@ use Storable qw(nfreeze thaw);
 
 use JSON::PP;
 
+use UNIVERSAL::require;
+
 has 'bind_addr' => (
 	is => 'rw',
 	isa => 'Str',
@@ -89,16 +91,6 @@ has 'httpd_thread_obj' => (
 	is => 'rw',
 );
 
-
-has 'configuration_reboot_callback' => (
-	is => 'rw',
-	default => sub {
-		sub {
-			return;
-		}
-	},
-);
-
 has 'config_data_fetch_callback' => (
 	is => 'rw',
 	default => sub {
@@ -109,6 +101,15 @@ has 'config_data_fetch_callback' => (
 );
 
 has 'config_data_write_callback' => (
+	is => 'rw',
+	default => sub {
+		sub {
+			return;
+		}
+	},
+);
+
+has 'request_replace_code_callback' => (
 	is => 'rw',
 	default => sub {
 		sub {
@@ -336,6 +337,7 @@ sub json_contents_process {
 	my %target_json_data = (
 		"source_table_list.json" => \&source_table,
 		"server_config.json" => \&server_config,
+		"server_address_info.json" => \&server_address_info,
 	);
 	my %contents = (
 		'ContentType' => "text/plain",
@@ -362,7 +364,42 @@ sub source_table{
 }
 
 sub server_config{
-	return;
+	my ($self) = @_;
+	my $json = "";
+	return $json;
+}
+
+sub server_address_info {
+	my ($self) = @_;
+	my $json = "";
+	my @addrs = ();
+	unless ($^O eq "MSWin32"){
+		"IO::Interface::Simple"->require;
+		my @ifs = IO::Interface::Simple->interfaces;
+		my $i;
+		foreach $i (@ifs) {
+			if($i->address eq "127.0.0.1"){
+				next;
+			}
+			push(@addrs, $i->address);
+		}
+	}else{
+		my @all_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
+		foreach my $addr (@all_addrs) {
+			if($addr eq "127.0.0.1"){
+				next;
+			}
+			chomp($addr);
+			push(@addrs, $addr);
+		}
+	}
+	my %addr_info = (
+		'PORT' => $self->config_data->{RTSP_SOURCE_PORT},
+		'IP' => \@addrs,
+	);
+	$json = JSON::PP::encode_json(\%addr_info);
+
+	return $json;
 }
 
 sub reply_not_found {

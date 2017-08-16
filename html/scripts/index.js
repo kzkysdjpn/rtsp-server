@@ -12,7 +12,22 @@ function setupParams()
 		dataType:     'JSON',
 		scriptCharset:'utf-8',
 		success:      function(data){
-			loadParams(data);
+			loadSourceParams(data);
+			return;
+		},
+		error:        function(data){
+			return;
+		}
+	});
+
+	$.ajax({
+		type:         'get',
+		url:          'server_address_info.json',
+		contentType:  'application/JSON',
+		dataType:     'JSON',
+		scriptCharset:'utf-8',
+		success:      function(data){
+			loadServerAddressParams(data);
 			return;
 		},
 		error:        function(data){
@@ -23,16 +38,16 @@ function setupParams()
 	return;
 }
 
-function loadParams(data)
+function loadSourceParams(data)
 {
 	var	i;
 	for(i = 0; i < data.length; i++){
-		$('#source_table_list').append(rowData(data[i]));
+		$('#source_table_list').append(sourceRowData(data[i]));
 	}
 	return;
 }
 
-function rowData(dataRow)
+function sourceRowData(dataRow)
 {
 	var row = '<tr><td scope="row"><a ref="#" onclick="onStartView(\'' +
 		dataRow['SOURCE_NAME'] + '\')">' +
@@ -41,6 +56,22 @@ function rowData(dataRow)
 		'<td>' + dataRow['DATE']  + '</td>' +
 		'<td>' + dataRow['PID']   + '</td>' +
 		'<td>' + dataRow['COUNT'] + '</td></tr>';
+	return row;
+}
+
+function loadServerAddressParams(data)
+{
+	var	i;
+	for(i = 0; i < data['IP'].length; i++){
+		$('#server_address_list').append(serverAddressRowData(data['IP'][i], data['PORT']));
+	}
+	return;
+}
+
+function serverAddressRowData(ip, port)
+{
+	var row = '<tr><td scope="row">' + ip + '</td>' +
+		'<td>' + port + '</td></tr>';
 	return row;
 }
 
