@@ -6,9 +6,9 @@
       "PASSWORD": "fuga"
     },
     {
-      "USERNAME": "username",
-      "MOUNT_PATH": "live",
-      "PASSWORD": "password"
+      "USERNAME": "admin",
+      "MOUNT_PATH": "",
+      "PASSWORD": "admin"
     }
   ],
   "RTP_START_PORT": "6970",

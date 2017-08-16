@@ -308,7 +308,6 @@ sub default_contents_process {
 		$file_path =~ s|/|\\|g;
 	}
 	$filename = $self->html_root_dir . $file_path;
-	print $filename . "\n";
 	my $size = -s $filename;
 	CORE::open(IN_FILE, "< $filename") or return %contents;
 	binmode(IN_FILE);
