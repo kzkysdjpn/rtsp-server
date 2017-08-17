@@ -6,12 +6,12 @@
   "RTSP_SOURCE_PORT": 5544,
   "SOURCE_AUTH_INFO_LIST": [
     {
-      "MOUNT_PATH": "title",
+      "SRC_NAME": "title",
       "USERNAME": "hoge",
       "PASSWORD": "fuga"
     },
     {
-      "MOUNT_PATH": "",
+      "SRC_NAME": "",
       "USERNAME": "admin",
       "PASSWORD": "admin"
     }

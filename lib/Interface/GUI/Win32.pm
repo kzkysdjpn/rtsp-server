@@ -376,13 +376,13 @@ sub load_source_user_info {
 	$self->{gui_handle}->auth_list_view->{SOURCE_USERNAME}->Clear;
 	$self->{gui_handle}->auth_list_view->{SOURCE_PASSWORD}->SelectAll;
 	$self->{gui_handle}->auth_list_view->{SOURCE_PASSWORD}->Clear;
-	$self->{gui_handle}->auth_list_view->{SOURCE_MOUNT}->SelectAll;
-	$self->{gui_handle}->auth_list_view->{SOURCE_MOUNT}->Clear;
+	$self->{gui_handle}->auth_list_view->{SOURCE_NAME}->SelectAll;
+	$self->{gui_handle}->auth_list_view->{SOURCE_NAME}->Clear;
 	for my $href ( @$user_info ) {
 		$self->{gui_handle}->auth_list_view->InsertItem(
 			-text => [
 				$$href{USERNAME},
-				$$href{MOUNT_PATH}
+				$$href{SRC_NAME}
 			]
 		);
 	}
@@ -584,16 +584,16 @@ sub setup_setting_dialog {
 	);
 
 	$self->setting_dialog->AddLabel(
-		-name   => "SourceMountPathLabel",
-		-text   => "Mount Path",
+		-name   => "SourceNameLabel",
+		-text   => "Src. Name",
 		-left   => 364,
 		-top    => 300,
 		-width  => 120,
 		-height => 32,
 		-align  => 'center',
 	);
-	my $source_mount = $self->setting_dialog->AddTextfield(
-		-name     => "SOURCE_MOUNT_PATH",
+	my $source_name = $self->setting_dialog->AddTextfield(
+		-name     => "SOURCE_NAME",
 		-text     => "",
 		-left     => 364,
 		-top      => 332,
@@ -646,7 +646,7 @@ sub setup_setting_dialog {
 			my @widgets = (
 				$list_view->{SOURCE_USERNAME},
 				$list_view->{SOURCE_PASSWORD},
-				$list_view->{SOURCE_MOUNT},
+				$list_view->{SOURCE_NAME},
 			);
 			my $error;
 			unless ( defined $list_view ) {
@@ -689,9 +689,9 @@ sub setup_setting_dialog {
 			);
 
 			my %new_user = (
-				"USERNAME"   => $widgets[0]->Text(),
-				"PASSWORD"   => $widgets[1]->Text(),
-				"MOUNT_PATH" => $widgets[2]->Text(),
+				"USERNAME" => $widgets[0]->Text(),
+				"PASSWORD" => $widgets[1]->Text(),
+				"SRC_NAME" => $widgets[2]->Text(),
 			);
 			push(@$auth_list, \%new_user);
 			$list_view->{source_auth_list} = $auth_list;
@@ -732,12 +732,12 @@ sub setup_setting_dialog {
 				my @widgets = (
 					$self->auth_list_view->{SOURCE_USERNAME},
 					$self->auth_list_view->{SOURCE_PASSWORD},
-					$self->auth_list_view->{SOURCE_MOUNT},
+					$self->auth_list_view->{SOURCE_NAME},
 				);
 				my @config_name = (
 					'USERNAME',
 					'PASSWORD',
-					'MOUNT_PATH',
+					'SRC_NAME',
 				);
 				foreach my $i(0 .. $#widgets){
 					$widgets[$i]->SelectAll;
@@ -750,11 +750,11 @@ sub setup_setting_dialog {
 	);
 	$self->auth_list_view->{gui_handle} = $self;
 	$self->auth_list_view->InsertColumn(-item => 0, -text => "User Name", -width => 240);
-	$self->auth_list_view->InsertColumn(-item => 2, -text => "Mount Path", -width => 240);
+	$self->auth_list_view->InsertColumn(-item => 2, -text => "Src. Name", -width => 240);
 
 	$self->auth_list_view->{SOURCE_USERNAME} = $source_user;
 	$self->auth_list_view->{SOURCE_PASSWORD} = $source_pass;
-	$self->auth_list_view->{SOURCE_MOUNT} = $source_mount;
+	$self->auth_list_view->{SOURCE_NAME} = $source_name;
 
 	$cancel = $self->setting_dialog->AddButton(
 		-name => "SettingView",
