@@ -25,18 +25,18 @@
   <body>
     <div class="container">
       <div class="masthead">
-        <h4 class="muted">RTSP-Server Status</h4>
+        <h4 class="muted">RTSP-Server Settings</h4>
         <div class="navbar">
           <div class="navbar-inner">
             <div class="container">
               <ul class="nav">
-                <li class="active">
-                  <a href="#" style='font-size:10px;'>Status</a>
+                <li>
+                  <a href="index.html" style='font-size:10px;'>Status</a>
                 </li>
                 <li>
                   <a href="settings.html" style='font-size:10px;'>Settings</a>
                 </li>
-                <li>
+                <li class="active">
                   <a href="#" style='font-size:10px;'>Administrator</a>
                 </li>
               </ul>
@@ -47,46 +47,40 @@
       </div>
       <!-- Jumbotron -->
       <div class="jumbotron">
-        <p class="lead">Server Address Information</p>
+        <p class="lead">Administrator</p>
       </div>
+      <hr />
       <table class="type08">
         <thead>
           <tr>
-            <th scope="cols">RTSP Source IP</th>
-            <th scope="cols">RTSP Source Port</th>
+            <th scope="cols">User Name</th>
+            <th scope="cols">Password</th>
           </tr>
         </thead>
-        <tbody id="server_address_list">
+        <tbody>
+          <tr>
+            <td><input type="text" value=""/></td>
+            <td><input type="password" value=""/></td>
+          </tr>
         </tbody>
       </table>
       <hr />
-      <div class="jumbotron">
-        <p class="lead">Counnect Source Information</p>
-      </div>
-      <div style="width:320px;height:180px;background-color:#7F7F7F;border:2px solid #000000;margin:10px 10px 10px 10px;"></div>
-      <table class="type08">
-        <thead>
-          <tr>
-            <th scope="cols">Source Name</th>
-            <th scope="cols">Host Address</th>
-            <th scope="cols">Start Time</th>
-            <th scope="cols">Command PID</th>
-            <th scope="cols">Con. Count</th>
-          </tr>
-        </thead>
-        <tbody id="source_table_list">
-        <!--
-	<tr>
-          <th scope="row">Source Name</th>
-          <td>Host Address</td>
-          <td>Start Time</td>
-          <td>Command PID</td>
-          <td>Connection Count</td>
-	</tr>
-        -->
+      <table class="setting_list">
+        <tbody id="setting_list_table">
+	  <tr>
+            <td>Web Interface Port</td>
+            <td><input type="text" value=""/></td>
+	  </tr>
         </tbody>
       </table>
-      <input name="rtsp_client_port" type="hidden" value="" />
+      <table class="horizontal_layout">
+        <tbody>
+          <tr>
+            <td><input class="square_btn" type="button" value="Cancel"></input></td>
+            <td><input class="square_btn" type="button" value="Apply"></input></td>
+          </tr>
+        </tbody>
+      </table>
       <hr />
       <div class="footer">
         <p>Kazuki Yoshida 2017</p>

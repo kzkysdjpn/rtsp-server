@@ -11,11 +11,18 @@
       "PASSWORD": "admin"
     }
   ],
-  "RTP_START_PORT": "6970",
+  "RTP_START_PORT": 6970,
   "ON_RECEIVE_COMMAND": "<%AppPath%>\\cores\\ffmpeg\\bin\\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx",
-  "RTSP_CLIENT_PORT": "5545",
-  "RTSP_SOURCE_PORT": "5544",
+  "RTSP_CLIENT_PORT": 5545,
+  "RTSP_SOURCE_PORT": 5544,
   "INITIAL_LOAD": true,
   "ON_DBLCLICK_COMMAND": "<%AppPath%>\\cores\\ffmpeg\\bin\\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>",
-  "USE_SOURCE_AUTH": true
+  "USE_SOURCE_AUTH": true,
+  "HTTPD_SETTINGS" : {
+    "AUTH_INFO" : {
+      "USERNAME": "admin",
+      "PASSWORD": "admin"
+    },
+    "BIND_PORT" : 8090
+  }
 }
