@@ -799,6 +799,11 @@ sub apply_setting {
 	my @checkbox_fields = (
 		"USE_SOURCE_AUTH",
 	);
+	my @revert_integer_json = (
+		"RTSP_SOURCE_PORT",
+		"RTSP_CLIENT_PORT",
+		"RTP_START_PORT",
+	);
 	$config_hash = $self->{gui_handle}->config_data_fetch_callback->();
 
 	check_rtsp_source_and_client_port($self, $config_hash);
@@ -809,12 +814,17 @@ sub apply_setting {
 		}
 		$config_hash->{$var} = $self->{$var}->Text();
 	}
+
 	foreach my $var(@checkbox_fields){
 		unless($self->{$var}->GetCheck()){
 			$config_hash->{$var} = JSON::PP::false;
 			next;
 		}
 		$config_hash->{$var} = JSON::PP::true;
+	}
+
+	foreach my $var(@revert_integer_json){
+		$config_hash->{$var} = $config_hash->{$var} + 0;
 	}
 
 	$config_hash->{INITIAL_LOAD} = JSON::PP::true;
