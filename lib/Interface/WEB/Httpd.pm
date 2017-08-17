@@ -365,7 +365,10 @@ sub source_table{
 
 sub server_config{
 	my ($self) = @_;
+	my $config_hash;
 	my $json = "";
+	$config_hash = $self->config_data_fetch_callback->();
+	$json = JSON::PP::encode_json($config_hash);
 	return $json;
 }
 
@@ -396,6 +399,7 @@ sub server_address_info {
 	my %addr_info = (
 		'PORT' => $self->config_data->{RTSP_SOURCE_PORT},
 		'IP' => \@addrs,
+		'CLIENT_PORT' => $self->config_data->{RTSP_CLIENT_PORT},
 	);
 	$json = JSON::PP::encode_json(\%addr_info);
 

@@ -49,6 +49,7 @@
       <div class="jumbotron">
         <p class="lead">Server Address Information</p>
       </div>
+      <input id='rtsp_client_port' name="rtsp_client_port" type="hidden" value="" />
       <table class="type08">
         <thead>
           <tr>
@@ -67,11 +68,11 @@
       <table class="type08">
         <thead>
           <tr>
-            <th scope="cols">Source Name</th>
-            <th scope="cols">Host Address</th>
+            <th scope="cols">Source</th>
+            <th scope="cols">Address</th>
             <th scope="cols">Start Time</th>
-            <th scope="cols">Command PID</th>
-            <th scope="cols">Con. Count</th>
+            <th scope="cols">Command</th>
+            <th scope="cols">Count</th>
           </tr>
         </thead>
         <tbody id="source_table_list">
@@ -86,7 +87,6 @@
         -->
         </tbody>
       </table>
-      <input name="rtsp_client_port" type="hidden" value="" />
       <hr />
       <div class="footer">
         <p>Kazuki Yoshida 2017</p>

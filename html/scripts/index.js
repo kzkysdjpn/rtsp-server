@@ -65,6 +65,7 @@ function loadServerAddressParams(data)
 	for(i = 0; i < data['IP'].length; i++){
 		$('#server_address_list').append(serverAddressRowData(data['IP'][i], data['PORT']));
 	}
+	$('#rtsp_client_port').val(data['CLIENT_PORT']);
 	return;
 }
 
@@ -78,5 +79,6 @@ function serverAddressRowData(ip, port)
 function onStartView(source_name)
 {
 	alert("source name is " + source_name);
+	alert($('#rtsp_client_port').val());
 	return;
 }
