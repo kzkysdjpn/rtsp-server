@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>RTSP-Server Status</title>
+    <title>RTSP-Server Settings</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Software Developed in Shizuoka" />
     <meta name="author" content="Kazuki Yoshida Japan" />
@@ -79,7 +79,7 @@
         </tbody>
       </table>
       <hr />
-      <div class="jumbotron"><p class="lead">Authentication</p></div>
+      <div class="jumbotron"><p class="lead">Authentication Management</p></div>
       <table class="type08">
         <thead>
           <tr>
@@ -96,14 +96,7 @@
           </tr>
         </tbody>
       </table>
-      <table class="horizontal_layout">
-        <tbody>
-          <tr>
-            <td><input class="square_btn" type="button" value="Remove User"></input></td>
-            <td><input class="square_btn" type="button" value="Add User"></input></td>
-          </tr>
-        </tbody>
-      </table>
+      <div class='button_layout'><input class="square_btn_float_right" type="button" value="Add User"></input></div>
       <table class="type08">
         <thead>
           <tr>
@@ -114,8 +107,8 @@
         <tbody id="auth_user_list" >
         </tbody>
       </table>
-      <hr />
-      <div class="footer">
+      <div class='button_layout'><input class="square_btn_float_right" type="button" value="Remove User"></input></div>
+      <div class="footer_style">
         <p>Kazuki Yoshida 2017</p>
       </div>
     </div>

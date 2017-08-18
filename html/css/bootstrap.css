@@ -895,7 +895,7 @@ dd {
 
 hr {
   margin: 20px 0;
-  border: 0;
+  border: 1px;
   border-top: 1px solid #eeeeee;
   border-bottom: 1px solid #ffffff;
 }
@@ -6164,4 +6164,50 @@ a.badge:focus {
 
 .affix {
   position: fixed;
+}
+
+input.square_btn {
+    display: inline-block;
+    padding: 0.3em 1em;
+    text-decoration: none;
+    color: black;
+    border: solid 2px #ccc;
+    border-radius: 3px;
+    transition: .4s;
+    background: #FFFFFF;
+}
+
+input.square_btn:hover {
+    background: #ccc;
+    color: black;
+}
+
+input.square_btn_float_right {
+    width:250px;
+    display: inline-block;
+    padding: 0.3em 1em;
+    text-decoration: none;
+    color: black;
+    border: solid 2px #ccc;
+    border-radius: 3px;
+    transition: .4s;
+    background: #FFFFFF;
+}
+
+input.square_btn_float_right:hover {
+    background: #ccc;
+    color: black;
+}
+
+div.button_layout {
+  width: 600px;
+  margin-top: 15px;
+  margin-bottom: 20px;
+  text-align:right;
+}
+
+div.footer_style {
+  margin-top: 20px;
+  border-top: 1px solid #dddddd;
+  text-align:right; 
 }
