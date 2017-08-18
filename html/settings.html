@@ -20,7 +20,7 @@
     <![endif]-->
     <!-- Fav and touch icons -->
     <script type='text/javascript' src='scripts/jquery.js'></script>
-    <script type='text/javascript' src='scripts/index.js'></script>
+    <script type='text/javascript' src='scripts/settings.js'></script>
   </head>
   <body>
     <div class="container">
@@ -53,21 +53,33 @@
         <tbody id="setting_list_table">
 	  <tr>
             <td>RTSP Source Port</td>
-            <td><input type="text" value=""/></td>
+            <td><input id='RTSP_SOURCE_PORT' type="text" value=""/></td>
 	  </tr>
 	  <tr>
             <td>On Receive Command</td>
-            <td><textarea type="text" value=""></textarea></td>
+            <td><textarea id='ON_RECEIVE_COMMAND' type="text" value=""></textarea></td>
 	  </tr>
 	  <tr>
             <td>RTP Start Port</td>
-            <td><input type="text" value=""/></td>
+            <td><input id='RTP_START_PORT' type="text" value=""/></td>
+	  </tr>
+	  <tr>
+            <td>Use Source Authentication</td>
+            <td><input class="checkbox" type="checkbox" name="use_source_auth"></input></td>
 	  </tr>
         </tbody>
       </table>
       <hr />
+      <table class="horizontal_layout">
+        <tbody>
+          <tr>
+            <td><input class="square_btn" type="button" value="Cancel"></input></td>
+            <td><input class="square_btn" type="button" value="Apply"></input></td>
+          </tr>
+        </tbody>
+      </table>
+      <hr />
       <div class="jumbotron"><p class="lead">Authentication</p></div>
-      <input class="checkbox" type="checkbox" name="use_source_auth">&nbsp;Use Source Authentication</input>
       <table class="type08">
         <thead>
           <tr>
@@ -99,16 +111,7 @@
             <th scope="cols">Source Name</th>
           </tr>
         </thead>
-        <tbody>
-        </tbody>
-      </table>
-      <hr />
-      <table class="horizontal_layout">
-        <tbody>
-          <tr>
-            <td><input class="square_btn" type="button" value="Cancel"></input></td>
-            <td><input class="square_btn" type="button" value="Apply"></input></td>
-          </tr>
+        <tbody id="auth_user_list" >
         </tbody>
       </table>
       <hr />
