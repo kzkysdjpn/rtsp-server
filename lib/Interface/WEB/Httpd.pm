@@ -366,8 +366,17 @@ sub source_table{
 sub server_config{
 	my ($self) = @_;
 	my $config_hash;
+	my $user_info;
 	my $json = "";
 	$config_hash = $self->config_data_fetch_callback->();
+
+	$user_info = $config_hash->{SOURCE_AUTH_INFO_LIST};
+	for my $href ( @$user_info ) {
+		delete($$href{PASSWORD});
+	}
+
+	delete($config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD});
+
 	$json = JSON::PP::encode_json($config_hash);
 	return $json;
 }
