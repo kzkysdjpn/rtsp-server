@@ -20,6 +20,8 @@
     <![endif]-->
     <!-- Fav and touch icons -->
     <script type='text/javascript' src='scripts/jquery.js'></script>
+    <script type='text/javascript' src='scripts/jquery.blockUI.js'></script>
+    <script type='text/javascript' src='scripts/block_interface.js'></script>
     <script type='text/javascript' src='scripts/settings.js'></script>
   </head>
   <body>
@@ -65,19 +67,11 @@
 	  </tr>
 	  <tr>
             <td>Use Source Authentication</td>
-            <td><input class="checkbox" type="checkbox" name="use_source_auth"></input></td>
+            <td><input class="checkbox" type="checkbox" name="USE_SOURCE_AUTH" id='USE_SOURCE_AUTH'></input></td>
 	  </tr>
         </tbody>
       </table>
-      <hr />
-      <table class="horizontal_layout">
-        <tbody>
-          <tr>
-            <td><input class="square_btn" type="button" value="Cancel"></input></td>
-            <td><input class="square_btn" type="button" value="Apply"></input></td>
-          </tr>
-        </tbody>
-      </table>
+      <div class='button_layout'><input class="square_btn_float_right" type="button" value="Apply" onClick='onApplyRTSPServerSettings()' ></input>
       <hr />
       <div class="jumbotron"><p class="lead">Authentication Management</p></div>
       <table class="type08">
@@ -90,13 +84,13 @@
         </thead>
         <tbody>
           <tr>
-            <td><input type="text" value=""/></td>
-            <td><input type="password" value=""/></td>
-            <td><input type="text" value=""/></td>
+            <td><input type="text" value="" id='USERNAME' /></td>
+            <td><input type="password" value="" id='PASSWORD' /></td>
+            <td><input type="text" value="" id='SRC_NAME' /></td>
           </tr>
         </tbody>
       </table>
-      <div class='button_layout'><input class="square_btn_float_right" type="button" value="Add User"></input></div>
+      <div class='button_layout'><input class="square_btn_float_right" type="button" value="Add User" onClick='onAddUserRTSPServerSettings()' ></input></div>
       <table class="type08">
         <thead>
           <tr>

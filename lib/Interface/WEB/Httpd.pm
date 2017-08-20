@@ -16,6 +16,9 @@ use Storable qw(nfreeze thaw);
 
 use JSON::PP;
 
+use Digest::MD5 qw(md5_hex);
+use Time::HiRes qw(gettimeofday);
+
 use UNIVERSAL::require;
 
 has 'bind_addr' => (
@@ -139,6 +142,59 @@ has 'source_table_list' => (
 	default => sub { [] },
 );
 
+has 'realm' => (
+    is => 'rw',
+    isa => 'Str',
+    default => "RTSP Server",
+);
+
+has 'nonce' => (
+    is => 'rw',
+    isa => 'Str',
+    default => sub {
+        return get_nonce();
+    },
+);
+
+has 'client_nonce' => (
+    is => 'rw',
+    isa => 'Str',
+    default => "",
+);
+
+has 'last_nonce_update_time' => (
+    is => 'rw',
+    isa => 'Int',
+    default => sub {
+	my ($sec, undef) = gettimeofday;
+        return $sec;
+    },
+);
+
+sub get_nonce {
+	my $nonce = "";
+	my $nonce_16;
+	my $i;
+
+	for($i = 0; $i < 8; $i++){
+		$nonce_16 = sprintf("%04x", int(rand 0xFFFF)) . "";
+		$nonce = $nonce . $nonce_16;
+	}
+	return $nonce;
+}
+
+sub update_nonce {
+	my ($self) = @_;
+	my ($cur_sec, undef) = gettimeofday;
+	my $past_sec = $self->last_nonce_update_time - $cur_sec;
+	if ($past_sec < 300){
+		return;
+	}
+	$self->last_nonce_update_time($cur_sec);
+	$self->nonce(get_nonce);
+	return;
+}
+
 sub open {
 	my ($self) = @_;
 
@@ -198,20 +254,24 @@ sub open_httpd_interface {
 		\&json_contents_process,
 	);
 	my $length;
-	my $d = HTTP::Daemon->new(LocalAddr => $self->bind_addr, LocalPort => $self->bind_port) || die $!;
 	my $suffix;
 	my $i;
 	my $header;
 	my $res;
-	$self->httpd_obj($d);
+	$self->httpd_obj(HTTP::Daemon->new(LocalAddr => $self->bind_addr, LocalPort => $self->bind_port));
 	$self->httpd_obj->timeout($self->accept_timeout);
 	$length = @suffix_types;
 	while (! $self->signal_terminate ){
 		unless (($c, $peer_addr) = $self->httpd_obj->accept()){
 			$self->fetch_source_list;
+			$self->update_nonce();
 			next;
 		}
 		while(my $req = $c->get_request ){
+			unless($self->authorization_process($req, $c)){
+				$self->reply_unauthrization_digest($c);
+				next;
+			}
 			my %contents = (
 				'ContentType' => "text/plain",
 				'Body' => "",
@@ -234,7 +294,7 @@ sub open_httpd_interface {
 				$c->send_response($res);
 				next;
 			}
-			%contents = $content_processes[$i]->($self, $req->url->path);
+			%contents = $content_processes[$i]->($self, $req);
 			unless(length($contents{'Body'})){
 				$self->reply_not_found($c);
 				next;
@@ -332,12 +392,14 @@ sub default_contents_process {
 }
 
 sub json_contents_process {
-	my ($self, $path) = @_;
+	my ($self, $req) = @_;
 	my $file_path;
+	my $path = $req->url->path;
 	my %target_json_data = (
 		"source_table_list.json" => \&source_table,
 		"server_config.json" => \&server_config,
 		"server_address_info.json" => \&server_address_info,
+		"server_settings_apply.json" => \&server_settings_apply,
 	);
 	my %contents = (
 		'ContentType' => "text/plain",
@@ -349,14 +411,14 @@ sub json_contents_process {
 			next;
 		}
 		$contents{ContentType} = "application/json";
-		$contents{Body} = $target_json_data{$key}->($self);
+		$contents{Body} = $target_json_data{$key}->($self, $req);
 		last;
 	}
 	return %contents;
 }
 
 sub source_table{
-	my ($self) = @_;
+	my ($self, undef) = @_;
 	my $source_table_list = $self->source_table_list;
 	my $json = "";
 	$json = JSON::PP::encode_json($source_table_list);
@@ -364,7 +426,7 @@ sub source_table{
 }
 
 sub server_config{
-	my ($self) = @_;
+	my ($self, undef) = @_;
 	my $config_hash;
 	my $user_info;
 	my $json = "";
@@ -382,7 +444,7 @@ sub server_config{
 }
 
 sub server_address_info {
-	my ($self) = @_;
+	my ($self, undef) = @_;
 	my $json = "";
 	my @addrs = ();
 	unless ($^O eq "MSWin32"){
@@ -415,10 +477,152 @@ sub server_address_info {
 	return $json;
 }
 
+use Data::Dumper;
+
+sub server_settings_apply {
+	my ($self, $req) = @_;
+	my $json = "";
+	my $config_hash;
+	my %status = (
+		'STATUS' => JSON::PP::true,
+	);
+	my @server_settings_field = (
+		"RTSP_SOURCE_PORT",
+		"ON_RECEIVE_COMMAND",
+		"RTP_START_PORT",
+		"USE_SOURCE_AUTH",
+	);
+	my $post_href = JSON::PP::decode_json($req->content);
+
+	$json = JSON::PP::encode_json(\%status);
+
+	$config_hash = $self->config_data_fetch_callback->();
+	for my $key (keys(%{$config_hash})){
+		unless(grep { $_ eq $key } @server_settings_field ){
+			next;
+		}
+		$config_hash->{$key} = $post_href->{$key};
+	}
+	$self->fixed_integer_value_field($config_hash);
+	$self->config_data_write_callback->($config_hash);
+	return $json;
+}
+
+sub fixed_integer_value_field
+{
+	my ($self, $config_hash) = @_;
+	my @integer_value_field = (
+		"RTSP_SOURCE_PORT",
+		"RTSP_CLIENT_PORT",
+		"RTP_START_PORT"
+	);
+	for my $key (keys(%{$config_hash})){
+		unless(grep { $_ eq $key } @integer_value_field ){
+			next;
+		}
+		$config_hash->{$key} = $config_hash->{$key} + 0;
+	}
+	$config_hash->{HTTPD_SETTINGS}->{BIND_PORT} = $config_hash->{HTTPD_SETTINGS}->{BIND_PORT} + 0;
+	return;
+}
+
 sub reply_not_found {
 	my ($self, $c) = @_;
 	my $header = HTTP::Headers->new( 'Content-Type' => 'text/html' );
 	my $res = HTTP::Response->new( 404, 'Not Found', $header, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\" /><title>Not Found (404)</title><style type=\"text/css\">body { background-color: #fff; color: #666; text-align: center; font-family: arial, sans-serif; } div.dialog { width: 25em; padding: 0 4em; margin: 4em auto 0 auto; border: 1px solid #ccc; border-right-color: #999; border-bottom-color: #999; } h1 { font-size: 100%; color: #f00; line-height: 1.5em; }</style></head><body><div class=\"dialog\"><h1>Not Found.</h1></div></body></html>");
+	$c->send_response($res);
+	return;
+}
+
+sub authorization_process {
+	my ($self, $req, $c) = @_;
+	my $is_digest;
+	my %digest_info = (
+		"username" => "",
+		"realm" => "",
+		"nonce" => "",
+		"uri" => "",
+		"response" => "",
+	);
+	my $auth_line = $req->authorization;
+	unless(defined $auth_line){
+		return 0;
+	}
+	if (index($auth_line,"Digest") == -1){
+		return 0;
+	}
+	$is_digest = 1;
+	foreach my $key (keys(%digest_info)){
+		if($auth_line =~ /$key=\"(.*?)\"/){
+			next;
+		}
+		$is_digest = 0;
+		last;
+	}
+	if($is_digest == 0){
+		return 0;
+	}
+  
+	foreach my $key (keys(%digest_info)){
+		if ($auth_line =~ /$key=\"(.*?)\"/){
+			$digest_info{$key} = $1;
+		}
+	}
+	$self->client_nonce($digest_info{'nonce'});
+	if($digest_info{'nonce'} ne $self->nonce){
+		return 0;
+	}
+	if($digest_info{'realm'} ne $self->realm){
+		return 0;
+	}
+	unless($self->check_authorization_response($req, %digest_info)){
+		return 0;
+	}
+	return 1;
+}
+
+sub check_authorization_response {
+	my ($self, $req, %digest_info) = @_;
+	my $a1;
+	my $h_a1;
+	my $a2;
+	my $h_a2;
+	my $response;
+	my $h_response;
+	my $method;
+	my $username = $self->config_data->{HTTPD_SETTINGS}->{AUTH_INFO}->{USERNAME};
+	if($digest_info{'username'} ne $username){
+		return 0;
+	}
+	my $password = $self->config_data->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD};
+
+	unless(length($password)){
+		return 0;
+	}
+	$a1 = "$digest_info{'username'}:$digest_info{'realm'}:$password";
+	$h_a1 = md5_hex($a1);
+
+	$method = $req->method;
+	$a2 = "$method:$digest_info{'uri'}";
+	$h_a2 = md5_hex($a2);
+
+	$response = "$h_a1:$digest_info{'nonce'}:$h_a2";
+	$h_response = md5_hex($response);
+
+	if($h_response ne $digest_info{'response'}){
+		return 0;
+	}
+	return 1;
+}
+
+sub reply_unauthrization_digest {
+	my ($self, $c) = @_;
+	my $digest_line = "Digest realm=\"" . $self->realm . "\", nonce=\"" . $self->nonce . "\"";
+	my $header = HTTP::Headers->new(
+		'Content-Type' => 'text/html',
+		'WWW-Authenticate' => $digest_line,
+	);
+	my $res = HTTP::Response->new( 401, 'Unauthorized', $header, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head><meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\" /><title>Unauthorized (401)</title><style type=\"text/css\">body { background-color: #fff; color: #666; text-align: center; font-family: arial, sans-serif; } div.dialog { width: 25em; padding: 0 4em; margin: 4em auto 0 auto; border: 1px solid #ccc; border-right-color: #999; border-bottom-color: #999; } h1 { font-size: 100%; color: #f00; line-height: 1.5em; }</style></head><body><div class=\"dialog\"><h1>Unauthorized.</h1></div></body></html>");
 	$c->send_response($res);
 	return;
 }
