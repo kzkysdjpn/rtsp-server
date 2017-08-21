@@ -103,7 +103,7 @@ function onAddUserRTSPServerSettings()
 	open_block_ui('Please Wait.....');
 	$.ajax({
 		type:         'post',
-		url:          'add_server_auth_list.json',
+		url:          'server_auth_add_user.json',
 		data:         JSON.stringify(JSONData),
 		contentType:  'application/JSON',
 		dataType:     'JSON',

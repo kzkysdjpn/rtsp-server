@@ -400,6 +400,7 @@ sub json_contents_process {
 		"server_config.json" => \&server_config,
 		"server_address_info.json" => \&server_address_info,
 		"server_settings_apply.json" => \&server_settings_apply,
+		"server_auth_add_user.json" => \&server_auth_add_user,
 	);
 	my %contents = (
 		'ContentType' => "text/plain",
@@ -434,6 +435,9 @@ sub server_config{
 
 	$user_info = $config_hash->{SOURCE_AUTH_INFO_LIST};
 	for my $href ( @$user_info ) {
+		unless(exists($$href{PASSWORD})){
+			next;
+		}
 		delete($$href{PASSWORD});
 	}
 
@@ -477,8 +481,6 @@ sub server_address_info {
 	return $json;
 }
 
-use Data::Dumper;
-
 sub server_settings_apply {
 	my ($self, $req) = @_;
 	my $json = "";
@@ -494,7 +496,6 @@ sub server_settings_apply {
 	);
 	my $post_href = JSON::PP::decode_json($req->content);
 
-	$json = JSON::PP::encode_json(\%status);
 
 	$config_hash = $self->config_data_fetch_callback->();
 	for my $key (keys(%{$config_hash})){
@@ -505,7 +506,107 @@ sub server_settings_apply {
 	}
 	$self->fixed_integer_value_field($config_hash);
 	$self->config_data_write_callback->($config_hash);
+	$json = JSON::PP::encode_json(\%status);
 	return $json;
+}
+
+sub server_auth_add_user
+{
+	my ($self, $req) = @_;
+	my $json = "";
+	my %status = (
+		'STATUS' => 1,
+		'MESSAGE' => "",
+	);
+	my %new_user_info = (
+		'USERNAME' => "",
+		'PASSWORD' => "",
+		'SRC_NAME' => "",
+	);
+	my $config_hash = $self->config_data_fetch_callback->();
+	my $auth_list = $config_hash->{SOURCE_AUTH_INFO_LIST};
+	my $post_href = JSON::PP::decode_json($req->content);
+	%status = check_auth_user_info_field($post_href, $auth_list);
+	unless($status{STATUS}){
+		$status{STATUS} = JSON::PP::false;
+		$json = JSON::PP::encode_json(\%status);
+		return $json;
+	}
+
+	# Set new user information.
+	foreach my $key (keys(%new_user_info)){
+		unless(exists($post_href->{$key})){
+			next;
+		}
+		$new_user_info{$key} = $post_href->{$key};
+	}
+	push(@$auth_list, \%new_user_info);
+	$config_hash->{SOURCE_AUTH_INFO_LIST} = $auth_list;
+
+	# Finalize process for configuration data.
+	$self->fixed_integer_value_field($config_hash);
+	$self->config_data_write_callback->($config_hash);
+	$status{STATUS} = JSON::PP::true;
+	$json = JSON::PP::encode_json(\%status);
+	return $json;
+}
+
+sub check_auth_user_info_field
+{
+	my ($post_href, $auth_list) = @_;
+	my %is_required_field = (
+		'USERNAME' => 1,
+		'PASSWORD' => 1,
+		'SRC_NAME' => 0,
+	);
+	my %status = (
+		'STATUS' => 0,
+		'MESSAGE' => "",
+	);
+	# Check key exist.
+	my $exist_ok = 1;
+	foreach my $key (keys(%is_required_field)){
+		if(exists($post_href->{$key})){
+			next;
+		}
+		$exist_ok = 0;
+		last;
+	}
+	unless($exist_ok){
+		$status{MESSAGE} = "Not enogh to user information request key.";
+		return %status;
+	}
+
+	# Check empty field at username and password.
+	my $empty_field_exist = 0;
+	foreach my $key (keys(%is_required_field)){
+		unless($is_required_field{$key}){
+			next;
+		}
+		if(length($post_href->{$key})){
+			next;
+		}
+		$empty_field_exist = 1;
+		last;
+	}
+	if($empty_field_exist){
+		$status{MESSAGE} = "User Name or Password fields is empty. Please input these fields value.";
+		return %status;
+	}
+	my $is_conflict_user = 0;
+	foreach my $href ( @$auth_list ){
+		if($post_href->{USERNAME} ne $$href{USERNAME}){
+			next;
+		}
+		$is_conflict_user = 1;
+		last;
+	}
+	if($is_conflict_user){
+		$status{MESSAGE} = "Conflict the User Name. The User Name is already exist in the authorization list.";
+		return %status;
+	}
+	$status{STATUS} = 1;
+	return %status;
 }
 
 sub fixed_integer_value_field
