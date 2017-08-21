@@ -195,6 +195,40 @@ sub update_nonce {
 	return;
 }
 
+sub reboot_configration {
+	my ($self) = @_;
+	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
+	my $sock_addr = pack_sockaddr_in($self->local_control_port + 0,
+						Socket::inet_aton("localhost"));
+	my $data = {
+		# Arbitary Defined
+		# 0 - Fetch Configuration
+		# 1 - Terminate App
+		"APP_CTL_OPS" => 0,
+	};
+	my $frozen = nfreeze $data;
+	send($sock, $frozen, 0, $sock_addr);
+	shutdown $sock, 2;
+	-1;
+}
+
+sub do_terminate_app {
+	my ($self) = @_;
+	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
+	my $sock_addr = pack_sockaddr_in($self->local_control_port + 0,
+						Socket::inet_aton("localhost"));
+	my $data = {
+		# Arbitary Defined
+		# 0 - Fetch Configuration
+		# 1 - Terminate App
+		"APP_CTL_OPS" => 1,
+	};
+	my $frozen = nfreeze $data;
+	send($sock, $frozen, 0, $sock_addr);
+	shutdown $sock, 2;
+	-1;
+}
+
 sub open {
 	my ($self) = @_;
 
@@ -508,6 +542,7 @@ sub server_settings_apply {
 	$self->fixed_integer_value_field($config_hash);
 	$self->config_data_write_callback->($config_hash);
 	$json = JSON::PP::encode_json(\%status);
+	$self->reboot_configration();
 	return $json;
 }
 
@@ -549,6 +584,7 @@ sub server_auth_add_user
 	$self->config_data_write_callback->($config_hash);
 	$status{STATUS} = JSON::PP::true;
 	$json = JSON::PP::encode_json(\%status);
+	$self->reboot_configration();
 	return $json;
 }
 
@@ -649,6 +685,7 @@ sub server_auth_remove_user
 	$self->config_data_write_callback->($config_hash);
 	$status{STATUS} = JSON::PP::true;
 	$json = JSON::PP::encode_json(\%status);
+	$self->reboot_configration();
 	return $json;
 }
 

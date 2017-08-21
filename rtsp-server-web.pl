@@ -66,13 +66,13 @@ $web->config_data_write_callback(sub {
 });
 
 $web->signal_reboot_callback(sub {
-	$signal = 1;
+	$signal = 0;
 	$cv->send;
 	return;
 });
 
 $web->signal_terminate_callback(sub {
-	$signal = 0;
+	$signal = 1;
 	$cv->send;
 	return;
 });
