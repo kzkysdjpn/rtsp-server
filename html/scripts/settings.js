@@ -27,7 +27,7 @@ function setupParams()
 function loadServerConfigParams(data)
 {
 	var i;
-	var params_key = [ 
+	var params_key = [
 		'RTSP_SOURCE_PORT',
 		'ON_RECEIVE_COMMAND',
 		'RTP_START_PORT'
@@ -54,7 +54,7 @@ function loadAuthUserInfo(data)
 
 function authUserRowData(dataRow)
 {
-	var row = '<tr><td scope="row"><input style="width:30px;" type="radio" name="auth_list" value="' + dataRow['USERNAME'] + '">' + dataRow['USERNAME'] + '</input></td>' +
+	var row = '<tr><td scope="row"><input style="width:30px;" type="radio" name="AUTH_LIST" value="' + dataRow['USERNAME'] + '">' + dataRow['USERNAME'] + '</input></td>' +
 		'<td>' + dataRow['SRC_NAME']  + '</td></tr>';
 	return row;
 }
@@ -109,7 +109,7 @@ function onAddUserRTSPServerSettings()
 		dataType:     'JSON',
 		scriptCharset:'utf-8',
 		success:      function(data){
-			statusAddUserRTSPServerSettings(data);
+			statusReplyUserRTSPServerSettings(data);
 			return;
 		},
 		error:        function(data){
@@ -120,7 +120,7 @@ function onAddUserRTSPServerSettings()
 	return;
 }
 
-function statusAddUserRTSPServerSettings(data)
+function statusReplyUserRTSPServerSettings(data)
 {
 	if(('STATUS' in data) == false){
 		return;
@@ -134,5 +134,34 @@ function statusAddUserRTSPServerSettings(data)
 		return;
 	}
 	alert(data['MESSAGE']);
+	return;
+}
+
+function onRemoveUserRTSPServerSettings()
+{
+	if((typeof $("input[name='AUTH_LIST']:checked").val()) == 'undefined'){
+		alert("User Name not selected.");
+		return;
+	}
+	var JSONData = {
+		USERNAME: $("input[name='AUTH_LIST']:checked").val()
+	};
+	open_block_ui('Please Wait.....');
+	$.ajax({
+		type:         'post',
+		url:          'server_auth_remove_user.json',
+		data:         JSON.stringify(JSONData),
+		contentType:  'application/JSON',
+		dataType:     'JSON',
+		scriptCharset:'utf-8',
+		success:      function(data){
+			statusReplyUserRTSPServerSettings(data);
+			return;
+		},
+		error:        function(data){
+			return;
+		}
+	});
+
 	return;
 }

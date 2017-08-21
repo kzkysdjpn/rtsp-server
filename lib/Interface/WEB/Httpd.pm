@@ -401,6 +401,7 @@ sub json_contents_process {
 		"server_address_info.json" => \&server_address_info,
 		"server_settings_apply.json" => \&server_settings_apply,
 		"server_auth_add_user.json" => \&server_auth_add_user,
+		"server_auth_remove_user.json" => \&server_auth_remove_user,
 	);
 	my %contents = (
 		'ContentType' => "text/plain",
@@ -607,6 +608,48 @@ sub check_auth_user_info_field
 	}
 	$status{STATUS} = 1;
 	return %status;
+}
+
+sub server_auth_remove_user
+{
+	my ($self, $req) = @_;
+	my $json = "";
+	my %status = (
+		'STATUS' => 1,
+		'MESSAGE' => "",
+	);
+	my $config_hash = $self->config_data_fetch_callback->();
+	my $auth_list = $config_hash->{SOURCE_AUTH_INFO_LIST};
+	my $post_href = JSON::PP::decode_json($req->content);
+	unless(exists($post_href->{USERNAME})){
+		$status{STATUS} = JSON::PP::false;
+		$status{MESSAGE} = "Request User Name field not selected.";
+		$json = JSON::PP::encode_json(\%status);
+		return $json;
+	}
+	my $remove_index = -1;
+	foreach my $i(0 .. $#{$auth_list}){
+		if($post_href->{USERNAME} ne $$auth_list[$i]->{USERNAME}){
+			next;
+		}
+		$remove_index = $i;
+		last;
+	}
+	if($remove_index == -1){
+		$status{STATUS} = JSON::PP::false;
+		$status{MESSAGE} = "The selected User Name is not exist in authorization user list.";
+		$json = JSON::PP::encode_json(\%status);
+		return $json;
+	}
+	splice(@$auth_list, $remove_index, 1);
+	$config_hash->{SOURCE_AUTH_INFO_LIST} = $auth_list;
+
+	# Finalize process for configuration data.
+	$self->fixed_integer_value_field($config_hash);
+	$self->config_data_write_callback->($config_hash);
+	$status{STATUS} = JSON::PP::true;
+	$json = JSON::PP::encode_json(\%status);
+	return $json;
 }
 
 sub fixed_integer_value_field
