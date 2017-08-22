@@ -223,9 +223,13 @@ sub listen {
 
 sub close_listen_socket {
     my ($self) = @_;
+    unless(defined($self->listen_socket)){
+        return;
+    }
     shutdown $self->listen_socket, 2;
     $self->listen_socket->close;
     $self->listen_socket(undef);
+    $self->listener(undef);
     return;
 }
 

@@ -65,7 +65,7 @@ function loadServerAddressParams(data)
 	for(i = 0; i < data['IP'].length; i++){
 		$('#server_address_list').append(serverAddressRowData(data['IP'][i], data['PORT']));
 	}
-	$('#rtsp_client_port').val(data['CLIENT_PORT']);
+	$('#RTSP_CLIENT_PORT').val(data['CLIENT_PORT']);
 	return;
 }
 
@@ -78,5 +78,10 @@ function serverAddressRowData(ip, port)
 
 function onStartView(source_name)
 {
+	var link = "rtsp://127.0.0.1:" + $("#RTSP_CLIENT_PORT").val() + "/" + source_name;
+	var vlcPlayer = document.getElementById("vlc");
+	vlcPlayer.playlist.clear();
+	vlcPlayer.playlist.add(link);
+	vlcPlayer.playlist.play();
 	return;
 }

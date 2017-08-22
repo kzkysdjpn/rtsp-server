@@ -197,6 +197,9 @@ sub update_nonce {
 
 sub reboot_configration {
 	my ($self) = @_;
+	my @source_table_list = ();
+
+	$self->source_table_list(@source_table_list);
 	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
 	my $sock_addr = pack_sockaddr_in($self->local_control_port + 0,
 						Socket::inet_aton("localhost"));
