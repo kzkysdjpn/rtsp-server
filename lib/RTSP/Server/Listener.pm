@@ -106,7 +106,6 @@ sub listen {
             $handle->destroy;
             undef $handle;
         };
-        $conn->close_accept($cleanup);
         $handle = new AnyEvent::Handle
             fh => $fh,
             on_eof => sub {
@@ -210,6 +209,7 @@ sub listen {
         $conn->h($handle);
 
         # save connection object
+        $conn->client_socket($fh);
         $self->connections->{$conn->id} = $conn;
     }, sub {
         my ($fh, $host, $port) = @_;
@@ -226,6 +226,12 @@ sub close_listen_socket {
     unless(defined($self->listen_socket)){
         return;
     }
+    foreach my $key(keys %{$self->{connections}}){
+        my $conn = $self->connections->{$key};
+        shutdown $conn->client_socket, 2;
+        $conn->client_socket(undef);
+    }
+
     shutdown $self->listen_socket, 2;
     $self->listen_socket->close;
     $self->listen_socket(undef);

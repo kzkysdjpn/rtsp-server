@@ -140,13 +140,8 @@ has 'password' => (
     isa => 'Str',
 );
 
-has 'close_accept' => (
+has 'client_socket' => (
     is => 'rw',
-    default => sub {
-        sub {
-            return;
-        }
-    },
 );
 
 # should return a list of supported methods
