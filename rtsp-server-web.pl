@@ -127,7 +127,7 @@ while($signal == 0){
         $signal = 1;
         next;
     }
-    sleep 1; # Reboot process need interval......
+    sleep 3; # Reboot process need interval......
     $srv = RTSP::Server->new;
     $srv->client_listen_port($setup_config->config_data->{RTSP_CLIENT_PORT});
     $srv->source_listen_port($setup_config->config_data->{RTSP_SOURCE_PORT});

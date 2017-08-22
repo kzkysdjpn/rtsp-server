@@ -7,21 +7,6 @@ function setupParams()
 {
 	$.ajax({
 		type:         'get',
-		url:          'source_table_list.json',
-		contentType:  'application/JSON',
-		dataType:     'JSON',
-		scriptCharset:'utf-8',
-		success:      function(data){
-			loadSourceParams(data);
-			return;
-		},
-		error:        function(data){
-			return;
-		}
-	});
-
-	$.ajax({
-		type:         'get',
 		url:          'server_address_info.json',
 		contentType:  'application/JSON',
 		dataType:     'JSON',
@@ -49,8 +34,17 @@ function loadSourceParams(data)
 
 function sourceRowData(dataRow)
 {
+	/*
 	var row = '<tr><td scope="row"><a ref="#" onclick="onStartView(\'' +
 		dataRow['SOURCE_NAME'] + '\')">' +
+		dataRow['SOURCE_NAME'] + '</a></td>' +
+		'<td>' + dataRow['HOST']  + '</td>' +
+		'<td>' + dataRow['DATE']  + '</td>' +
+		'<td>' + dataRow['PID']   + '</td>' +
+		'<td>' + dataRow['COUNT'] + '</td></tr>';
+	*/
+	var row = '<tr><td scope="row"><a style="cursor: pointer;" ref="rtsp://' + location.hostname + ':' +
+		$("#RTSP_CLIENT_PORT").val() + "/" + dataRow['SOURCE_NAME'] + '">' +
 		dataRow['SOURCE_NAME'] + '</a></td>' +
 		'<td>' + dataRow['HOST']  + '</td>' +
 		'<td>' + dataRow['DATE']  + '</td>' +
@@ -66,6 +60,22 @@ function loadServerAddressParams(data)
 		$('#server_address_list').append(serverAddressRowData(data['IP'][i], data['PORT']));
 	}
 	$('#RTSP_CLIENT_PORT').val(data['CLIENT_PORT']);
+
+	$.ajax({
+		type:         'get',
+		url:          'source_table_list.json',
+		contentType:  'application/JSON',
+		dataType:     'JSON',
+		scriptCharset:'utf-8',
+		success:      function(data){
+			loadSourceParams(data);
+			return;
+		},
+		error:        function(data){
+			return;
+		}
+	});
+
 	return;
 }
 
@@ -78,7 +88,7 @@ function serverAddressRowData(ip, port)
 
 function onStartView(source_name)
 {
-	var link = "rtsp://127.0.0.1:" + $("#RTSP_CLIENT_PORT").val() + "/" + source_name;
+	var link = "rtsp://" + location.hostname + ":" + $("#RTSP_CLIENT_PORT").val() + "/" + source_name;
 	var vlcPlayer = document.getElementById("vlc");
 	vlcPlayer.playlist.clear();
 	vlcPlayer.playlist.add(link);
