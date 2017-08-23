@@ -20,7 +20,9 @@
     <![endif]-->
     <!-- Fav and touch icons -->
     <script type='text/javascript' src='scripts/jquery.js'></script>
-    <script type='text/javascript' src='scripts/index.js'></script>
+    <script type='text/javascript' src='scripts/jquery.blockUI.js'></script>
+    <script type='text/javascript' src='scripts/block_interface.js'></script>
+    <script type='text/javascript' src='scripts/administrator.js'></script>
   </head>
   <body>
     <div class="container">
@@ -59,8 +61,8 @@
         </thead>
         <tbody>
           <tr>
-            <td><input type="text" value=""/></td>
-            <td><input type="password" value=""/></td>
+            <td><input type="text" value="" id="USERNAME"/></td>
+            <td><input type="password" value="" id="PASSWORD"/></td>
           </tr>
         </tbody>
       </table>
@@ -69,11 +71,11 @@
         <tbody>
 	  <tr>
             <td>Web Interface Port</td>
-            <td><input type="text" value=""/></td>
+            <td><input type="text" value="" id="BIND_PORT"/></td>
 	  </tr>
         </tbody>
       </table>
-      <div class='button_layout'><input class="square_btn" type="button" value="Save and Reboot"></input></div>
+      <div class='button_layout'><input class="square_btn" type="button" value="Save and Reboot" onClick='onApplyAdministratorSettings()'></input></div>
       <div class="footer_style">
         <p>Kazuki Yoshida 2017</p>
       </div>

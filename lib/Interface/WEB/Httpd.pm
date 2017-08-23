@@ -186,7 +186,7 @@ sub get_nonce {
 sub update_nonce {
 	my ($self) = @_;
 	my ($cur_sec, undef) = gettimeofday;
-	my $past_sec = $self->last_nonce_update_time - $cur_sec;
+	my $past_sec = $cur_sec - $self->last_nonce_update_time ;
 	if ($past_sec < 300){
 		return;
 	}
@@ -433,12 +433,14 @@ sub json_contents_process {
 	my $file_path;
 	my $path = $req->url->path;
 	my %target_json_data = (
-		"source_table_list.json" => \&source_table,
-		"server_config.json" => \&server_config,
-		"server_address_info.json" => \&server_address_info,
-		"server_settings_apply.json" => \&server_settings_apply,
-		"server_auth_add_user.json" => \&server_auth_add_user,
+		"source_table_list.json"       => \&source_table,
+		"server_config.json"           => \&server_config,
+		"server_address_info.json"     => \&server_address_info,
+		"server_settings_apply.json"   => \&server_settings_apply,
+		"server_auth_add_user.json"    => \&server_auth_add_user,
 		"server_auth_remove_user.json" => \&server_auth_remove_user,
+		"admin_config.json"            => \&admin_config,
+		"admin_settings_apply.json"    => \&admin_settings_apply,
 	);
 	my %contents = (
 		'ContentType' => "text/plain",
@@ -479,7 +481,7 @@ sub server_config{
 		delete($$href{PASSWORD});
 	}
 
-	delete($config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD});
+	delete($config_hash->{HTTPD_SETTINGS});
 
 	$json = JSON::PP::encode_json($config_hash);
 	return $json;
@@ -633,6 +635,24 @@ sub check_auth_user_info_field
 		$status{MESSAGE} = "User Name or Password fields is empty. Please input these fields value.";
 		return %status;
 	}
+
+	# Check use character at user name and password.
+	my $is_character_ok = 1;
+	foreach my $key (keys(%is_required_field)){
+		unless($is_required_field{$key}){
+			next;
+		}
+		if(check_character_field($post_href->{$key})){
+			next
+		}
+		$is_character_ok = 0;
+		last;
+	}
+	unless($is_character_ok){
+		$status{MESSAGE} = "The illegal character value in User Name or Password fields.";
+		return %status;
+	}
+
 	my $is_conflict_user = 0;
 	foreach my $href ( @$auth_list ){
 		if($post_href->{USERNAME} ne $$href{USERNAME}){
@@ -646,6 +666,7 @@ sub check_auth_user_info_field
 		return %status;
 	}
 	$status{STATUS} = 1;
+	$status{MESSAGE} = "";
 	return %status;
 }
 
@@ -690,6 +711,122 @@ sub server_auth_remove_user
 	$json = JSON::PP::encode_json(\%status);
 	$self->reboot_configration();
 	return $json;
+}
+
+sub admin_config
+{
+	my ($self, undef) = @_;
+	my $json = "";
+	my $config_hash = $self->config_data_fetch_callback->();
+	delete($config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD});
+	$json = JSON::PP::encode_json($config_hash->{HTTPD_SETTINGS});
+	return $json;
+}
+
+sub admin_settings_apply
+{
+	my ($self, $req) = @_;
+	my %status = (
+		'STATUS' => 1,
+		'MESSAGE' => "",
+	);
+	my $json = "";
+	my $config_hash = $self->config_data_fetch_callback->();
+	my $post_href = JSON::PP::decode_json($req->content);
+	unless($status{STATUS}){
+		$status{STATUS} = JSON::PP::false;
+		$json = JSON::PP::encode_json(\%status);
+		return $json;
+	}
+	$status{STATUS} = JSON::PP::true;
+	$json = JSON::PP::encode_json(\%status);
+	print "UserName OK.\n";
+
+	return $json;
+}
+
+sub check_admin_settings_value
+{
+	my ($post_href, $httpd_config) = @_;
+	my %status = (
+		'STATUS' => 0,
+		'MESSAGE' => "",
+	);
+	my @httpd_setting_field = (
+		'AUTH_INFO',
+		'BIND_PORT',
+	);
+	my %auth_user_field = (
+		'USERNAME' => "",
+		'PASSWORD' => "",
+	);
+	my $field_not_found = 0;
+	foreach my $val(@httpd_setting_field){
+		if(exists($post_href{$val})){
+			next;
+		}
+		$field_not_found = 1;
+		last;
+	}
+	if($field_not_found){
+		$status{MESSAGE} = "HTTPD setting field not enogh....";
+		return %status;
+	}
+	unless($post_href{BIND_PORT} =~ /^\d{1,5}$/){
+		$status{MESSAGE} = "Illegal value at HTTPD bind port number field.";
+		return %status;
+	}
+	my $bind_port = $post_href{BIND_PORT} + 0;
+	if($bind_port < 1){
+		$status{MESSAGE} = "The HTTPD bind port number is less than 1.";
+		return %status;
+	}
+	if($bind_port > 65535){
+		$status{MESSAGE} = "The HTTPD bind port number is over 65535.";
+		return %status;
+	}
+	my $field_not_found = 0;
+	foreach my $key(keys(%auth_user_field)){
+		if(exists($post_href->{AUTH_INFO}->{$key})){
+			$auth_user_field{$key} = $post_href->{AUTH_INFO}->{$key};
+			next;
+		}
+		$field_not_found = 1;
+		last;
+	}
+	if($field_not_found){
+		$status{MESSAGE} = "HTTPD Authorization field not enogh....";
+		return %status;
+	}
+	if($auth_user_field{PASSWORD} eq "********"){
+		$auth_user_field{PASSWORD} = $httpd_config{AUTH_INFO}->{PASSWORD};
+	}
+
+	my $illegal_character_found = 0;
+	foreach my $key(keys(%auth_user_field)){
+		if(check_character_field($auth_user_field{$key})){
+			next;
+		}
+		$illegal_character_found = 1;
+		last;
+	}
+	if($illegal_character_found){
+		$status{MESSAGE} = "The illegal character value in User Name or Password fields.";
+		return %status;
+	}
+	$status{STATUS} = 1;
+	$status{MESSAGE} = "";
+	return %status;
+}
+
+sub check_character_field
+{
+	my ($char_str) = @_;
+
+	unless($char_str=~ /^[a-zA-Z\d-_]{4,100}$/){
+		return 0;
+	}
+	return 1;
 }
 
 sub fixed_integer_value_field
