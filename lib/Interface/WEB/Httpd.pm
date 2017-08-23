@@ -733,14 +733,25 @@ sub admin_settings_apply
 	my $json = "";
 	my $config_hash = $self->config_data_fetch_callback->();
 	my $post_href = JSON::PP::decode_json($req->content);
+
+	%status = check_admin_settings_value($post_href, $config_hash->{HTTPD_SETTINGS})
 	unless($status{STATUS}){
 		$status{STATUS} = JSON::PP::false;
 		$json = JSON::PP::encode_json(\%status);
 		return $json;
 	}
+	if($post_href->{PASSWORD} eq "********"){
+		$post_href->{PASSWORD} = $config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD};
+	}
+	my $httpd_reboot_required = 0;
+	my $config_bind_port = $config_hash->{HTTPD_SETTINGS}->{BIND_PORT} + 0;
+	my $post_bind_port = $post_href->{BIND_PORT} + 0;
+	if($config_bind_port != $post_bind_port){
+		$httpd_reboot_required = 1;
+	}
+
 	$status{STATUS} = JSON::PP::true;
 	$json = JSON::PP::encode_json(\%status);
-	print "UserName OK.\n";
 
 	return $json;
 }
