@@ -42,7 +42,7 @@ function onApplyAdministratorSettings()
 		}
 	};
 
-	open_block_ui('Please Wait.....');
+	open_block_ui('Please close this page.');
 	$.ajax({
 		type:         'post',
 		url:          'admin_settings_apply.json',
@@ -64,6 +64,17 @@ function onApplyAdministratorSettings()
 
 function statusReplyAdministratorSettings(data)
 {
+	if(('STATUS' in data) == false){
+		return;
+	}
+	if(data['STATUS'] == true){
+		return;
+	}
 	close_block_ui();
+	if(('MESSAGE' in data) == false){
+		return;
+	}
+	alert(data['MESSAGE']);
+
 	return;
 }

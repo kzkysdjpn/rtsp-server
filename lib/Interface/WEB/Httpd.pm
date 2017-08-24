@@ -171,7 +171,8 @@ has 'last_nonce_update_time' => (
     },
 );
 
-sub get_nonce {
+sub get_nonce
+{
 	my $nonce = "";
 	my $nonce_16;
 	my $i;
@@ -195,7 +196,8 @@ sub update_nonce {
 	return;
 }
 
-sub reboot_configration {
+sub reboot_configration
+{
 	my ($self) = @_;
 	my @source_table_list = ();
 
@@ -215,7 +217,8 @@ sub reboot_configration {
 	-1;
 }
 
-sub do_terminate_app {
+sub do_terminate_app
+{
 	my ($self) = @_;
 	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
 	my $sock_addr = pack_sockaddr_in($self->local_control_port + 0,
@@ -232,7 +235,8 @@ sub do_terminate_app {
 	-1;
 }
 
-sub open {
+sub open
+{
 	my ($self) = @_;
 
 	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
@@ -280,7 +284,8 @@ sub open {
 	return 1;
 }
 
-sub open_httpd_interface {
+sub open_httpd_interface
+{
 	my ($self) = @_;
 	my $c;
 	my $peer_addr;
@@ -295,7 +300,16 @@ sub open_httpd_interface {
 	my $i;
 	my $header;
 	my $res;
-	$self->httpd_obj(HTTP::Daemon->new(LocalAddr => $self->bind_addr, LocalPort => $self->bind_port));
+	my $d;
+	
+	$self->bind_port($self->config_data->{HTTPD_SETTINGS}->{BIND_PORT});
+	$d = HTTP::Daemon->new(
+		ReuseAddr => 1,
+		LocalAddr => $self->bind_addr,
+		LocalPort => $self->bind_port
+	) || die $!;
+	$self->httpd_obj($d);
+	$d = undef;
 	$self->httpd_obj->timeout($self->accept_timeout);
 	$length = @suffix_types;
 	while (! $self->signal_terminate ){
@@ -341,17 +355,36 @@ sub open_httpd_interface {
 			$c->send_response($res);
 		}
 		$c->close;
+		$c = undef;
 	}
 	return;
 }
 
-sub close {
+sub reconfigure_httpd_server
+{
+	my ($self) = @_;
+	my $d;
+	$self->httpd_obj(undef);
+	$d = HTTP::Daemon->new(
+		ReuseAddr => 1,
+		LocalAddr => $self->bind_addr,
+		LocalPort => $self->bind_port,
+	) || die $!;
+	$self->httpd_obj($d);
+	$d = undef;
+	print "Done reboot HTTP server" . $self->bind_port . "\n";
+	return;
+}
+
+sub close
+{
 	my ($self) = @_;
 	$self->httpd_thread_obj->join;
 	return;
 }
 
-sub parse_request_path_suffix {
+sub parse_request_path_suffix
+{
 	my ($self, $path) = @_;
 	my $regex_suffix = qr/\.[^\.]+$/;
 	my $suffix;
@@ -734,14 +767,14 @@ sub admin_settings_apply
 	my $config_hash = $self->config_data_fetch_callback->();
 	my $post_href = JSON::PP::decode_json($req->content);
 
-	%status = check_admin_settings_value($post_href, $config_hash->{HTTPD_SETTINGS})
+	%status = check_admin_settings_value($post_href, $config_hash->{HTTPD_SETTINGS});
 	unless($status{STATUS}){
 		$status{STATUS} = JSON::PP::false;
 		$json = JSON::PP::encode_json(\%status);
 		return $json;
 	}
-	if($post_href->{PASSWORD} eq "********"){
-		$post_href->{PASSWORD} = $config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD};
+	if($post_href->{AUTH_INFO}->{PASSWORD} eq "********"){
+		$post_href->{AUTH_INFO}->{PASSWORD} = $config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD};
 	}
 	my $httpd_reboot_required = 0;
 	my $config_bind_port = $config_hash->{HTTPD_SETTINGS}->{BIND_PORT} + 0;
@@ -749,6 +782,15 @@ sub admin_settings_apply
 	if($config_bind_port != $post_bind_port){
 		$httpd_reboot_required = 1;
 	}
+
+	$self->bind_port($post_bind_port);
+	if($httpd_reboot_required){
+		$self->reconfigure_httpd_server();
+	}
+
+	$config_hash->{HTTPD_SETTINGS} = $post_href;
+	$self->fixed_integer_value_field($config_hash);
+	$self->config_data_write_callback->($config_hash);
 
 	$status{STATUS} = JSON::PP::true;
 	$json = JSON::PP::encode_json(\%status);
@@ -773,7 +815,7 @@ sub check_admin_settings_value
 	);
 	my $field_not_found = 0;
 	foreach my $val(@httpd_setting_field){
-		if(exists($post_href{$val})){
+		if(exists($post_href->{$val})){
 			next;
 		}
 		$field_not_found = 1;
@@ -783,11 +825,11 @@ sub check_admin_settings_value
 		$status{MESSAGE} = "HTTPD setting field not enogh....";
 		return %status;
 	}
-	unless($post_href{BIND_PORT} =~ /^\d{1,5}$/){
+	unless($post_href->{BIND_PORT} =~ /^\d{1,5}$/){
 		$status{MESSAGE} = "Illegal value at HTTPD bind port number field.";
 		return %status;
 	}
-	my $bind_port = $post_href{BIND_PORT} + 0;
+	my $bind_port = $post_href->{BIND_PORT} + 0;
 	if($bind_port < 1){
 		$status{MESSAGE} = "The HTTPD bind port number is less than 1.";
 		return %status;
@@ -796,7 +838,7 @@ sub check_admin_settings_value
 		$status{MESSAGE} = "The HTTPD bind port number is over 65535.";
 		return %status;
 	}
-	my $field_not_found = 0;
+	$field_not_found = 0;
 	foreach my $key(keys(%auth_user_field)){
 		if(exists($post_href->{AUTH_INFO}->{$key})){
 			$auth_user_field{$key} = $post_href->{AUTH_INFO}->{$key};
@@ -810,7 +852,7 @@ sub check_admin_settings_value
 		return %status;
 	}
 	if($auth_user_field{PASSWORD} eq "********"){
-		$auth_user_field{PASSWORD} = $httpd_config{AUTH_INFO}->{PASSWORD};
+		$auth_user_field{PASSWORD} = $httpd_config->{AUTH_INFO}->{PASSWORD};
 	}
 
 	my $illegal_character_found = 0;
@@ -834,7 +876,7 @@ sub check_character_field
 {
 	my ($char_str) = @_;
 
-	unless($char_str=~ /^[a-zA-Z\d-_]{4,100}$/){
+	unless($char_str=~ /^[a-zA-Z\d_-]{4,100}$/){
 		return 0;
 	}
 	return 1;
