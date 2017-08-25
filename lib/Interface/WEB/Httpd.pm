@@ -47,8 +47,8 @@ has 'html_root_dir' => (
 
 has 'accept_timeout' => (
 	is => 'rw',
-	isa => 'Int',
-	default => 1,
+	isa => 'Num',
+	default => 0.1,
 );
 
 has 'signal_reboot_callback' => (
@@ -321,7 +321,7 @@ sub open_httpd_interface
 		while(my $req = $c->get_request ){
 			unless($self->authorization_process($req, $c)){
 				$self->reply_unauthrization_digest($c);
-				next;
+				last;
 			}
 			my %contents = (
 				'ContentType' => "text/plain",
@@ -338,17 +338,17 @@ sub open_httpd_interface
 				%contents = $self->default_contents_process($req->url->path);
 				unless( length($contents{'Body'})){
 					$self->reply_not_found($c);
-					next;
+					last;
 				}
 				$header = HTTP::Headers->new( 'Content-Type' => $contents{'ContentType'} );
 				$res = HTTP::Response->new( 200, 'OK', $header, $contents{'Body'});
 				$c->send_response($res);
-				next;
+				last;
 			}
 			%contents = $content_processes[$i]->($self, $req);
 			unless(length($contents{'Body'})){
 				$self->reply_not_found($c);
-				next;
+				last;
 			}
 			$header = HTTP::Headers->new( 'Content-Type' => $contents{'ContentType'});
 			$res = HTTP::Response->new( 200, 'OK', $header, $contents{'Body'});
@@ -436,7 +436,6 @@ sub default_contents_process {
 		$path = "/index.html";
 	}
 	$file_path = substr($path, 1);
-
 	if ( $^O eq "MSWin32" ){
 		$file_path =~ s|/|\\|g;
 	}
