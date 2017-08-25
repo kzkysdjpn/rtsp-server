@@ -364,7 +364,9 @@ sub reconfigure_httpd_server
 {
 	my ($self) = @_;
 	my $d;
+	shutdown $self->httpd_obj, 2;
 	$self->httpd_obj(undef);
+	sleep 3;
 	$d = HTTP::Daemon->new(
 		ReuseAddr => 1,
 		LocalAddr => $self->bind_addr,
@@ -791,7 +793,7 @@ sub admin_settings_apply
 	$config_hash->{HTTPD_SETTINGS} = $post_href;
 	$self->fixed_integer_value_field($config_hash);
 	$self->config_data_write_callback->($config_hash);
-
+	$self->config_data($config_hash);
 	$status{STATUS} = JSON::PP::true;
 	$json = JSON::PP::encode_json(\%status);
 
