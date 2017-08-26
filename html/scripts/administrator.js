@@ -42,7 +42,7 @@ function onApplyAdministratorSettings()
 		}
 	};
 
-	open_block_ui('Please close this page.');
+	open_block_ui('Please close this page and wait a minute.');
 	$.ajax({
 		type:         'post',
 		url:          'admin_settings_apply.json',

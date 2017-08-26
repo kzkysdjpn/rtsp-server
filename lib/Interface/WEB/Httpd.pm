@@ -171,6 +171,12 @@ has 'last_nonce_update_time' => (
     },
 );
 
+has 'httpd_reboot_required' => (
+    is => 'rw',
+    isa => 'Int',
+    default => 0,
+);
+
 sub get_nonce
 {
 	my $nonce = "";
@@ -353,9 +359,16 @@ sub open_httpd_interface
 			$header = HTTP::Headers->new( 'Content-Type' => $contents{'ContentType'});
 			$res = HTTP::Response->new( 200, 'OK', $header, $contents{'Body'});
 			$c->send_response($res);
+			if($self->httpd_reboot_required){
+				last;
+			}
 		}
 		$c->close;
 		$c = undef;
+		if($self->httpd_reboot_required){
+			$self->reconfigure_httpd_server();
+			$self->httpd_reboot_required(0);
+		}
 	}
 	return;
 }
@@ -374,7 +387,6 @@ sub reconfigure_httpd_server
 	) || die $!;
 	$self->httpd_obj($d);
 	$d = undef;
-	print "Done reboot HTTP server" . $self->bind_port . "\n";
 	return;
 }
 
@@ -777,17 +789,14 @@ sub admin_settings_apply
 	if($post_href->{AUTH_INFO}->{PASSWORD} eq "********"){
 		$post_href->{AUTH_INFO}->{PASSWORD} = $config_hash->{HTTPD_SETTINGS}->{AUTH_INFO}->{PASSWORD};
 	}
-	my $httpd_reboot_required = 0;
 	my $config_bind_port = $config_hash->{HTTPD_SETTINGS}->{BIND_PORT} + 0;
 	my $post_bind_port = $post_href->{BIND_PORT} + 0;
+	$self->httpd_reboot_required(0);
 	if($config_bind_port != $post_bind_port){
-		$httpd_reboot_required = 1;
+		$self->httpd_reboot_required(1);
 	}
 
 	$self->bind_port($post_bind_port);
-	if($httpd_reboot_required){
-		$self->reconfigure_httpd_server();
-	}
 
 	$config_hash->{HTTPD_SETTINGS} = $post_href;
 	$self->fixed_integer_value_field($config_hash);
