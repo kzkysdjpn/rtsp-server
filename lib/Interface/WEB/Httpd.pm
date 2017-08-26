@@ -1036,15 +1036,11 @@ sub fetch_source_list {
 		return;
 	}
 	# 1 - Add Source
-	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-	$year += 1900;
-	$mon += 1;
-	$date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
 	$href = {
 		"SOURCE_NAME" => $source_name,
 		"HOST" => $$data{HOST},
-		"DATE" => $date,
-		"PID" => 0, 
+		"DATE" => $$data{DATE},
+		"PID" =>  $$data{PID}, 
 		"COUNT" => $$data{COUNT},
 	};
 	push(@$source_table_list, $href);
@@ -1053,7 +1049,7 @@ sub fetch_source_list {
 }
 
 sub add_source {
-	my ($self, $mount, $count) = @_;
+	my ($self, $mount, $count, $date, $pid) = @_;
 	my $data = {
 		# Arbitary Defined
 		# 0 - Remove Source 
@@ -1062,6 +1058,8 @@ sub add_source {
 		"SOURCE_NAME" => $mount->path,
 		"HOST" => $mount->source_host,
 		"COUNT" => $count,
+		"DATE" => $date,
+		"PID" => $pid,
 	};
 	$self->queue_to_httpd->enqueue($data);
 	return;
@@ -1077,6 +1075,8 @@ sub remove_source {
 		"SOURCE_NAME" => $path,
 		"HOST" => "",
 		"COUNT" => $count,
+		"DATE" => "",
+		"PID" => 0,
 	};
 	$self->queue_to_httpd->enqueue($data);
 	return;
