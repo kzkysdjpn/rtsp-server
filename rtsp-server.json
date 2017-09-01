@@ -1,1 +1,28 @@
-{"RTP_START_PORT":6970,"ON_DBLCLICK_COMMAND":"<%AppPath%>\\cores\\ffmpeg\\bin\\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>","RTSP_SOURCE_PORT":5445,"INITIAL_LOAD":true,"SOURCE_AUTH_INFO_LIST":[{"USERNAME":"hoge","SRC_NAME":"title","PASSWORD":"fuga"},{"USERNAME":"admin","SRC_NAME":"","PASSWORD":"admin"}],"RTSP_CLIENT_PORT":5545,"USE_SOURCE_AUTH":false,"ON_RECEIVE_COMMAND":"<%AppPath%>\\cores\\ffmpeg\\bin\\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx","HTTPD_SETTINGS":{"AUTH_INFO":{"USERNAME":"admin","PASSWORD":"admin"},"BIND_PORT":8090}}
+{
+  "RTP_START_PORT": 6970,
+  "ON_DBLCLICK_COMMAND": "<%AppPath%>\\cores\\ffmpeg\\bin\\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>",
+  "RTSP_SOURCE_PORT": 5445,
+  "INITIAL_LOAD": true,
+  "SOURCE_AUTH_INFO_LIST": [
+    {
+      "USERNAME": "hoge",
+      "SRC_NAME": "title",
+      "PASSWORD": "fuga"
+    },
+    {
+      "USERNAME": "admin",
+      "SRC_NAME": "",
+      "PASSWORD": "admin"
+    }
+  ],
+  "RTSP_CLIENT_PORT": 5545,
+  "USE_SOURCE_AUTH": false,
+  "ON_RECEIVE_COMMAND"    : "<%AppPath%>\\cores\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\\record_files\\<%SourceName%>_<%DateTime%>.mp4",
+  "HTTPD_SETTINGS": {
+    "AUTH_INFO": {
+      "USERNAME": "admin",
+      "PASSWORD": "admin"
+    },
+    "BIND_PORT": 8090
+  }
+}
