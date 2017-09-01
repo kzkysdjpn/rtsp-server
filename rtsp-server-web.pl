@@ -25,18 +25,6 @@ my $signal = 0;
 
 my $web = Interface::WEB::Httpd->new;
 
-$web->request_replace_code_callback(sub {
-    my $replace_config = Interface::ConfigFile->new;
-    my $ret_string = $replace_config->replace_code(
-        $_[0], # Source request string
-        $_[1], # Source name
-        $_[2], # RTSP client port
-        $_[3], # Date and time information
-        $_[4]  # Source connect accumlation count
-     );
-    return $ret_string;
-});
-
 $web->config_data_fetch_callback(sub {
     my $fetch_config;
     my $config_hash;
@@ -152,11 +140,26 @@ $web->close;
 
 sub add_source_update_callback{
     my ($mount) = @_;
-    $count++;
+    # Date and Time
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    $count++;
+
     $year += 1900;
     $mon += 1;
     my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
+    # Execute Process
+    my $replace_config = Interface::ConfigFile->new;
+    unless($replace_config->open){
+        return;
+    }
+    my $ret_string = $replace_config->replace_code(
+        $replace_config->config_data->{ON_RECEIVE_COMMAND}, # Source request string
+        substr($mount->path, 1),                            # Source name
+        $replace_config->config_data->{RTSP_CLIENT_PORT},   # RTSP client port
+        $date,                                              # Date and time information
+        $count                                              # Source connect accumlation count
+    );
+    print $ret_string . "\n";
     $web->add_source(
         $mount, # Source Name
         $count, # Connection Count

@@ -112,15 +112,6 @@ has 'config_data_write_callback' => (
 	},
 );
 
-has 'request_replace_code_callback' => (
-	is => 'rw',
-	default => sub {
-		sub {
-			return;
-		}
-	},
-);
-
 has 'config_data' => (
 	is => 'rw',
 	default => sub {},
