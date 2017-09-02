@@ -9,20 +9,30 @@ use RTSP::Server;
 
 use Interface::WEB::Httpd;
 use Interface::ConfigFile;
-
+use Interface::ExternalCall;
 # Condition Variable for AnyEvent parameter.
 my $cv;
 
 my $setup_config = Interface::ConfigFile->new;
-unless ( $setup_config->open ){
-    print STDERR ("Invalid configuration.\n");
-    exit(0);
+if(! $setup_config->open ){
+    print STDERR "Invalid configuration.\n";
+    return;
 }
 
 # signal parameter
 # 0 - reboot
 # 1 - terminate
 my $signal = 0;
+
+# Execute External Process
+# This module initialize at first.
+# In Linux, the fork system call using.
+my $ext_call = Interface::ExternalCall->new;
+if(!$ext_call->open){
+	print STDERR "Failed to open external system execute module.\n";
+	return;
+}
+my %process_list = ();
 
 # WEB Interface allocate and initialize.
 my $web = Interface::WEB::Httpd->new;
@@ -68,7 +78,10 @@ $web->signal_terminate_callback(sub {
 });
 
 $web->config_data($setup_config->config_data);
-$web->open;
+if(!$web->open){
+	print STDERR "Failed to open web interface module.\n";
+	return;
+}
 
 # end if interrupt
 $SIG{INT} = sub {
@@ -107,6 +120,9 @@ while($signal == 0){
     $cv->recv;
     $srv->close_server;
     undef $srv;
+
+    $ext_call->stop_all_process;
+
     $cv = undef;
     if($signal != 0){
         next;
@@ -139,9 +155,11 @@ while($signal == 0){
     $srv->listen;
 }
 $web->close;
+$ext_call->close;
 
 sub add_source_update_callback{
     my ($mount) = @_;
+    my $source_name = substr($mount->path, 1);
     # Date and Time
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     $count++;
@@ -156,24 +174,35 @@ sub add_source_update_callback{
     }
     my $ret_string = $replace_config->replace_code(
         $replace_config->config_data->{ON_RECEIVE_COMMAND}, # Source request string
-        substr($mount->path, 1),                            # Source name
+        $source_name,                            # Source name
         $replace_config->config_data->{RTSP_CLIENT_PORT},   # RTSP client port
         $date,                                              # Date and time information
         $count                                              # Source connect accumlation count
     );
-    print $ret_string . "\n";
+    # Execute External Program via command line system call.
+    $ext_call->external_command_line($ret_string);
+    $ext_call->start_process;
+    $process_list{$source_name} = $ext_call->reply_status;
+
     $web->add_source(
-        $mount, # Source Name
-        $count, # Connection Count
-        $date,  # Connection Start Time
-        0,   # Running External Process
+        $mount,                      # Source Name
+        $count,                      # Connection Count
+        $date,                       # Connection Start Time
+        $process_list{$source_name}, # Running External Process
     );
     return;
 }
 
 sub remove_source_update_callback{
     my ($path) = @_;
+    my $source_name = substr($path, 1);
     $web->remove_source($path, $count);
+    if(!exists($process_list{$source_name})){
+        return;
+    }
+    $ext_call->terminate_process_id($process_list{$source_name});
+    delete($process_list{$source_name});
+    $ext_call->stop_process();
     return;
 }
 

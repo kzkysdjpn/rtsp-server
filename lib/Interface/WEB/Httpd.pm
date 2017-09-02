@@ -214,9 +214,12 @@ sub reboot_configration
 	-1;
 }
 
-sub do_terminate_app
+sub terminate_server
 {
 	my ($self) = @_;
+	my @source_table_list = ();
+
+	$self->source_table_list(\@source_table_list);
 	socket my ($sock), AF_INET, SOCK_DGRAM, 0;
 	my $sock_addr = pack_sockaddr_in($self->local_control_port + 0,
 						Socket::inet_aton("localhost"));
@@ -478,6 +481,7 @@ sub json_contents_process {
 		"server_auth_remove_user.json" => \&server_auth_remove_user,
 		"admin_config.json"            => \&admin_config,
 		"admin_settings_apply.json"    => \&admin_settings_apply,
+		"admin_terminate_app.json"     => \&admin_terminate_app,
 	);
 	my %contents = (
 		'ContentType' => "text/plain",
@@ -899,6 +903,20 @@ sub fixed_integer_value_field
 	}
 	$config_hash->{HTTPD_SETTINGS}->{BIND_PORT} = $config_hash->{HTTPD_SETTINGS}->{BIND_PORT} + 0;
 	return;
+}
+
+sub admin_terminate_app
+{
+	my ($self, undef) = @_;
+	my $json = "";
+	my %status = (
+		'STATUS' => 1,
+		'MESSAGE' => "",
+	);
+	$self->signal_terminate(1);
+	$self->terminate_server();
+	$json = JSON::PP::encode_json(\%status);
+	return $json;
 }
 
 sub reply_not_found {

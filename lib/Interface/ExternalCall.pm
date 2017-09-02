@@ -219,7 +219,7 @@ sub start_process
 	if ( $^O eq "MSWin32"){
 		my ($filename, $args) = split(/ / , $self->external_command_line, 2);
 		$args = ' ' . $args;
-		my $flag = Win32::Process::CREATE_NEW_CONSOLE();
+		my $flag = Win32::Process::CREATE_NO_WINDOW();
 		Win32::Process::Create($pid, $filename, $args, 0, $flag, ".") || return 0;
 		$process_ids = $self->external_process_ids;
 		push(@$process_ids, $pid);

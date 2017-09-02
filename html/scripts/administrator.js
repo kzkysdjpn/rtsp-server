@@ -78,3 +78,29 @@ function statusReplyAdministratorSettings(data)
 
 	return;
 }
+
+function onCompletelyExitApp()
+{
+	var ret;
+
+	ret = confirm("Will you terminate this application, completely ?");
+	if(ret == false){
+		return;
+	}
+	$.ajax({
+		type:         'get',
+		url:          'admin_terminate_app.json',
+		contentType:  'application/JSON',
+		dataType:     'JSON',
+		scriptCharset:'utf-8',
+		success:      function(data){
+			statusReplyAdministratorSettings(data);
+			return;
+		},
+		error:        function(data){
+			return;
+		}
+	});
+
+	return;
+}
