@@ -18,11 +18,13 @@ unless ( $setup_config->open ){
     print STDERR ("Invalid configuration.\n");
     exit(0);
 }
+
 # signal parameter
 # 0 - reboot
 # 1 - terminate
 my $signal = 0;
 
+# WEB Interface allocate and initialize.
 my $web = Interface::WEB::Httpd->new;
 
 $web->config_data_fetch_callback(sub {
@@ -146,7 +148,7 @@ sub add_source_update_callback{
 
     $year += 1900;
     $mon += 1;
-    my $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
+    my $date = sprintf("%04d%02d%02d%02d%02d%02d" ,$year,$mon,$mday,$hour,$min,$sec);
     # Execute Process
     my $replace_config = Interface::ConfigFile->new;
     unless($replace_config->open){
