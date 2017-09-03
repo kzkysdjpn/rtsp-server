@@ -21,6 +21,15 @@ use Time::HiRes qw(gettimeofday);
 
 use UNIVERSAL::require;
 
+use XML::Simple;
+use Encode 'encode';
+use utf8;
+binmode STDOUT, 'utf8';
+
+use POSIX qw(strftime);
+use POSIX qw(setlocale LC_TIME);
+use Time::Piece;
+
 has 'bind_addr' => (
 	is => 'rw',
 	isa => 'Str',
@@ -134,38 +143,58 @@ has 'source_table_list' => (
 );
 
 has 'realm' => (
-    is => 'rw',
-    isa => 'Str',
-    default => "RTSP Server",
+	is => 'rw',
+	isa => 'Str',
+	default => "RTSP Server",
 );
 
 has 'nonce' => (
-    is => 'rw',
-    isa => 'Str',
-    default => sub {
-        return get_nonce();
-    },
+	is => 'rw',
+	isa => 'Str',
+	default => sub {
+		return get_nonce();
+	},
 );
 
 has 'client_nonce' => (
-    is => 'rw',
-    isa => 'Str',
-    default => "",
+	is => 'rw',
+	isa => 'Str',
+	default => "",
 );
 
 has 'last_nonce_update_time' => (
-    is => 'rw',
-    isa => 'Int',
-    default => sub {
-	my ($sec, undef) = gettimeofday;
-        return $sec;
-    },
+	is => 'rw',
+	isa => 'Int',
+	default => sub {
+		my ($sec, undef) = gettimeofday;
+		return $sec;
+	},
 );
 
 has 'httpd_reboot_required' => (
-    is => 'rw',
-    isa => 'Int',
-    default => 0,
+	is => 'rw',
+	isa => 'Int',
+	default => 0,
+);
+
+has 'source_stream_log' => (
+	is => 'rw',
+	isa => 'ArrayRef',
+	default => sub { [] },
+);
+
+has 'stream_log_last_update' => (
+	is => 'rw',
+	isa => 'Str',
+	default => sub {
+		return rfc_822_datetime();
+	},
+);
+
+has 'max_store_log' => (
+	is => 'rw',
+	isa => 'Int',
+	default => 100,
 );
 
 sub get_nonce
@@ -291,9 +320,11 @@ sub open_httpd_interface
 	my $peer_addr;
 	my @suffix_types = (
 		"json",
+		"xml",
 	);
 	my @content_processes = (
 		\&json_contents_process,
+		\&xml_contents_process,
 	);
 	my $length;
 	my $suffix;
@@ -334,7 +365,7 @@ sub open_httpd_interface
 					last;
 				}
 			}
-			if($length <=  $i){
+			if($i >= $length){
 				%contents = $self->default_contents_process($req->url->path);
 				unless( length($contents{'Body'})){
 					$self->reply_not_found($c);
@@ -432,6 +463,7 @@ sub default_contents_process {
 		"mp4" => "audio/mp4",
 		"mpeg" => "video/mpeg",
 		"json" => "application/json",
+		"xml" => "application/xml",
 		"tgz" => "application/x-tar",
 	);
 	my %contents = (
@@ -468,7 +500,8 @@ sub default_contents_process {
 	return %contents;
 }
 
-sub json_contents_process {
+sub json_contents_process
+{
 	my ($self, $req) = @_;
 	my $file_path;
 	my $path = $req->url->path;
@@ -919,6 +952,94 @@ sub admin_terminate_app
 	return $json;
 }
 
+sub xml_contents_process
+{
+	my ($self, $req) = @_;
+	my $file_path;
+	my $path = $req->url->path;
+	my %target_xml_data = (
+		"index.xml"       => \&index_xml,
+	);
+
+	my %contents = (
+		'ContentType' => "text/plain",
+		'Body' => "",
+	);
+	$file_path = substr($path, 1);
+	foreach my $key(keys(%target_xml_data)){
+		unless($file_path eq $key){
+			next;
+		}
+		$contents{ContentType} = "application/xml";
+		$contents{Body} = $target_xml_data{$key}->($self, $req);
+		last;
+	}
+	return %contents;
+}
+
+sub index_xml
+{
+	my ($self, undef) = @_;
+	my $header = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\">\n<channel>";
+	my $footer = "</channel></rss>\n";
+	my $rss_field = {
+		'title' => [
+			'RTSP-Server'
+		],
+		'description' => [
+			'Incoming Source Stream'
+		],
+		'pubDate' => [
+			$self->stream_log_last_update
+		],
+		'lastBuildDate' => [
+			$self->stream_log_last_update
+		],
+		'link' => [
+			'http://127.0.0.1:' . $self->config_data->{HTTPD_SETTINGS}->{BIND_PORT}
+		]
+	};
+	my $rss_header = XMLout($rss_field, RootName => '');
+
+	my $source_stream_log = $self->source_stream_log;
+	my $i;
+	my $rss_body = '';
+	for($i = 0; $i < scalar(@$source_stream_log); $i++){
+		my $log_href = @$source_stream_log[$i];
+		my $ops_str = "";
+		if($$log_href{OPS}){
+			$ops_str = "Incoming";
+		}else{
+			$ops_str = "Leaving";
+		}
+		my $item = {
+			'title' => [
+				$ops_str . " " . $$log_href{SOURCE_NAME}
+			],
+			'link' => [
+				'http://127.0.0.1:' . $self->config_data->{HTTPD_SETTINGS}->{BIND_PORT} . "?" . "COUNT=" . $$log_href{COUNT} . "&OPS=" . $$log_href{OPS}
+			],
+			'guid' => [
+				{
+					'content' => 'http://127.0.0.1:' . $self->config_data->{HTTPD_SETTINGS}->{BIND_PORT} . "?" . "COUNT=" . $$log_href{COUNT} . "&OPS=" . $$log_href{OPS},
+					'isPermaLink' => 'true'
+				}
+			],
+			'pubDate' => [
+				$$log_href{DATE}
+			],
+			'description' => [
+				$ops_str . " Stream " . $$log_href{SOURCE_NAME} . " Remote Host " . $$log_href{HOST} . " Count at " . $$log_href{COUNT}
+			]
+		};
+		my $item_xml = XMLout($item, RootName => 'item');
+		$rss_body = $rss_body . $item_xml;
+
+	}
+	my $rss_content = $header . $rss_header . $rss_body . $footer;
+	return $rss_content;
+}
+
 sub reply_not_found {
 	my ($self, $c) = @_;
 	my $header = HTTP::Headers->new( 'Content-Type' => 'text/html' );
@@ -1038,6 +1159,7 @@ sub fetch_source_list {
 			$href = @$source_table_list[$i];
 			if($$href{SOURCE_NAME} eq $source_name){
 				splice(@$source_table_list, $i, 1);
+				$self->record_source_stream_log($$data{OPS}, $href);
 			}
 
 		}
@@ -1053,8 +1175,52 @@ sub fetch_source_list {
 		"COUNT" => $$data{COUNT},
 	};
 	push(@$source_table_list, $href);
+	$self->record_source_stream_log($$data{OPS}, $href);
 	$self->source_table_list($source_table_list);
 	return;
+}
+
+sub record_source_stream_log
+{
+	my ($self, $ops, $href) = @_;
+	my $source_stream_log = $self->source_stream_log;
+	my $log_num = scalar(@$source_stream_log) + 1;
+	if($log_num >= $self->max_store_log){
+		my $last_index = scalar(@$source_stream_log) - 1;
+		splice(@$source_stream_log, $last_index, 1);
+	}
+	my $rfc_822 = rfc_822_datetime();
+	$self->stream_log_last_update($rfc_822);
+	my $log_href = {
+		"SOURCE_NAME" => $$href{SOURCE_NAME},
+		"HOST"        => $$href{HOST},
+		"COUNT"       => $$href{COUNT},
+		"DATE"        => $rfc_822,
+	};
+
+	unless($ops){
+		$$log_href{OPS} = 0;
+	}else{
+		$$log_href{OPS} = 1;
+	}
+	unshift(@$source_stream_log, $log_href);
+	return;
+}
+
+sub rfc_822_datetime
+{
+	my $now = time();
+	# query and save the old locale
+	my $old_locale = setlocale(LC_TIME);
+
+	setlocale(LC_TIME, "C");
+	# RFC822 (actually RFC2822, as the year has 4 digits)
+
+	my $rfc_822 = strftime("%a, %d %b %Y %H:%M:%S %z", localtime($now));
+
+	# restore the old locale
+	setlocale(LC_TIME, $old_locale);
+	return $rfc_822;
 }
 
 sub add_source {

@@ -184,6 +184,7 @@ sub add_source_update_callback{
     $ext_call->start_process;
     $process_list{$source_name} = $ext_call->reply_status;
 
+    $date = sprintf("%04d/%02d/%02d %02d:%02d:%02d" ,$year,$mon,$mday,$hour,$min,$sec);
     $web->add_source(
         $mount,                      # Source Name
         $count,                      # Connection Count
