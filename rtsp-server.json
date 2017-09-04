@@ -17,7 +17,7 @@
   ],
   "RTSP_CLIENT_PORT": 5545,
   "USE_SOURCE_AUTH": false,
-  "ON_RECEIVE_COMMAND"    : "<%AppPath%>\\cores\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\\record_files\\<%SourceName%>_<%DateTime%>.mp4",
+  "ON_RECEIVE_COMMAND": "<%AppPath%>\\cores\\ffmpeg\\bin\\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\\record_files\\<%SourceName%>_<%DateTime%>.ts",
   "HTTPD_SETTINGS": {
     "AUTH_INFO": {
       "USERNAME": "admin",
