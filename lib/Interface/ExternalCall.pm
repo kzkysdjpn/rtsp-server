@@ -264,6 +264,7 @@ sub stop_process
 			if($pid->GetProcessID() == $self->terminate_process_id){
 				splice(@$process_ids, $i, 1);
 				$pid->Kill(0);
+				$pid->Wait(3000);
 				$pid = undef;
 			}
 		}
@@ -304,6 +305,7 @@ sub stop_all_process
 		$process_ids = $self->external_process_ids;
 		for($i = 0; $i < scalar(@$process_ids); $i++){
 			@$process_ids[$i]->Kill(0);
+			@$process_ids[$i]->Wait(3000);
 		}
 		$self->external_process_ids(\@empty_array);
 		return;
