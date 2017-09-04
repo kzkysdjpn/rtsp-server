@@ -29,6 +29,7 @@ binmode STDOUT, 'utf8';
 use POSIX qw(strftime);
 use POSIX qw(setlocale LC_TIME);
 use Time::Piece;
+use Time::Local;
 
 has 'bind_addr' => (
 	is => 'rw',
@@ -1210,13 +1211,15 @@ sub record_source_stream_log
 sub rfc_822_datetime
 {
 	my $now = time();
+
 	# query and save the old locale
 	my $old_locale = setlocale(LC_TIME);
 
 	setlocale(LC_TIME, "C");
 	# RFC822 (actually RFC2822, as the year has 4 digits)
-
-	my $rfc_822 = strftime("%a, %d %b %Y %H:%M:%S %z", localtime($now));
+	my $tz_off = (timegm(localtime($now))-timegm(gmtime($now)))/60;
+	my $tz = sprintf("%+03d%02d", $tz_off/60, $tz_off%60);
+	my $rfc_822 = strftime("%a, %d %b %Y %H:%M:%S", localtime($now)) . $tz;
 
 	# restore the old locale
 	setlocale(LC_TIME, $old_locale);
