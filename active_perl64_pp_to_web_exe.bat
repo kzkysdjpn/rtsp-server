@@ -1,1 +1,0 @@
-pp --gui -I C:\Perl64\site\lib -I C:\Perl64\lib -M Socket6 -M URI -M Digest::MD5 -M MooseX::Getopt -M MooseX::Getopt::GLD -M MooseX::Role::Parameterized::Meta::Trait::Parameterized -M MooseX::Getopt::Basic -M MooseX::Getopt::Meta::Attribute::Trait -M MooseX::Getopt::Meta::Attribute::Trait::NoGetopt rtsp-server-web.pl -o rtsp-server-web.exe
