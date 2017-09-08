@@ -57,15 +57,50 @@ ports with `--clientport/-c` and `--sourceport/-s`
 | <%SourceCount%>    | Replace to accumulation souce connection count            | 8                      |
 | <%AppPath%>        | Replace to replace to execute perl script directory       | C:\rtsp-server         |
 
-#### Examples
+#### Examples (For Windows)
+
+##### Recording on your hard disk 
+
+`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\record_files\<%SourceName%>_<%DateTime%>.ts`
+
+Replace as Example
+
+`C:\rtsp-server\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy C:\rtsp-server\record_files\live_20170801090000.ts`
+
+Do not use mp4 format. The format needs finalize atom table process. The process dosen't make it in time.
+
+##### Playing on your display 
+
+`<%AppPath%>\cores\ffmpeg\bin\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>`
+
+Replace as Example
+
+`C:\rtsp-server\cores\ffmpeg\bin\ffplay.exe rtsp://127.0.0.1:5545/live`
 
 ##### Create HTTP Live Streaming
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
 
-Replace as
+Replace as Example
 
 `C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\live.m3u8 C:\inetpub\wwwroot\live_20170801090000_%04d.ts`
+
+##### Upload to Youtube Live
+
+`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx` 
+
+Replace as Example
+
+`C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:5545/live -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx` 
+
+For any upload Youtube live stream, the source name(<%SourceName%>) will be match to Youtube stream key.
+
+| Replace Code       | Example Value          |
+|:-------------------|:-----------------------|
+| <%SourceName%>     | xxxx-xxxx-xxxx-xxxx    |
+
+
+`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/<%SoureName%>` 
 
 ## TODO:
 
