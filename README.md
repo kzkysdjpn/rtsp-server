@@ -49,11 +49,17 @@ If you don't want to run it as root, you may specify non-priviliged
 ports with `--clientport/-c` and `--sourceport/-s`
 
 ### On Receive Execute Command
-|Replace Code  |Description                           |
-|:-------------|:-------------------------------------|
-|<%SourceName%>|Replace to Application or Source Name |
+| Replace Code       | Description                                               |
+|:-------------------|:----------------------------------------------------------|
+| <%SourceName%>     | Replace to application or source name                     |
+| <%RTSPClientPort%> | Replace to client side RTSP request port                  |
+| <%DateTime%>       | Replace to date Time information string as yyyymmddHHMMSS |
+| <%SourceCount%>    | Replace to accumulation souce connection count            |
+| <%AppPath%>        | Replace to replace to execute perl script directory       |
 
 #### Examples
+
+##### Create HTTP Live Streaming
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
 
