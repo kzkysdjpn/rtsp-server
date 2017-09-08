@@ -49,19 +49,23 @@ If you don't want to run it as root, you may specify non-priviliged
 ports with `--clientport/-c` and `--sourceport/-s`
 
 ### On Receive Execute Command
-| Replace Code       | Description                                               |
-|:-------------------|:----------------------------------------------------------|
-| <%SourceName%>     | Replace to application or source name                     |
-| <%RTSPClientPort%> | Replace to client side RTSP request port                  |
-| <%DateTime%>       | Replace to date Time information string as yyyymmddHHMMSS |
-| <%SourceCount%>    | Replace to accumulation souce connection count            |
-| <%AppPath%>        | Replace to replace to execute perl script directory       |
+| Replace Code       | Description                                               | Example Value          |
+|:-------------------|:----------------------------------------------------------|:-----------------------|
+| <%SourceName%>     | Replace to application or source name                     | live                   |
+| <%RTSPClientPort%> | Replace to client side RTSP request port                  | 5545                   |
+| <%DateTime%>       | Replace to date Time information string as yyyymmddHHMMSS | 2017:08:01 09:00:00    |
+| <%SourceCount%>    | Replace to accumulation souce connection count            | 8                      |
+| <%AppPath%>        | Replace to replace to execute perl script directory       | C:\rtsp-server         |
 
 #### Examples
 
 ##### Create HTTP Live Streaming
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
+
+Replace as
+
+`C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\live.m3u8 C:\inetpub\wwwroot\live_20170801090000_%04d.ts`
 
 ## TODO:
 
