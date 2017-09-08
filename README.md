@@ -48,6 +48,10 @@ player. Just point it at rtsp://12.34.56.78/abc
 If you don't want to run it as root, you may specify non-priviliged
 ports with `--clientport/-c` and `--sourceport/-s`
 
+### On Receive Execute Command
+
+`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
+
 ## TODO:
 
 Priv dropping, authentication, client encoder, stats, tests
