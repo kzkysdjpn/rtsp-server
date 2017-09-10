@@ -65,9 +65,9 @@ ANNOUNCE and RECORD RTSP methods, such as [FFmpeg](https://www.ffmpeg.org/ffmpeg
 
 The iOS application released at App. Store and Google Play Store.
 
-<a href="https://itunes.apple.com/us/app/live-reporter-security-and-broadcasting-camera/id996017825?mt=8" style="display:inline-block;overflow:hidden;background:url(//linkmaker.itunes.apple.com/assets/shared/badges/ja-jp/appstore-lrg.svg) no-repeat;width:135px;height:40px;background-size:contain;"></a>
-
-<a href='https://play.google.com/store/apps/details?id=net.kzkysdjpn.live_reporter&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png'/></a>
+|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <a href="https://itunes.apple.com/us/app/live-reporter-security-and-broadcasting-camera/id996017825?mt=8" style="display:inline-block;overflow:hidden;background:url(//linkmaker.itunes.apple.com/assets/shared/badges/ja-jp/appstore-lrg.svg) no-repeat;width:135px;height:40px;background-size:contain;"></a> |
+| <a href='https://play.google.com/store/apps/details?id=net.kzkysdjpn.live_reporter&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png'/></a>                             |
 
 You should then be able to play that stream with any decent media
 player. Just point it at rtsp://12.34.56.78/abc
