@@ -139,6 +139,7 @@ For any upload Youtube live stream, the source name(<%SourceName%>) will be matc
 
 ## Source Directroy Structure
 
+```
 HOME
 +- rtsp-server
     |- rtsp-server.pl <- Base Main Module.
@@ -159,9 +160,11 @@ HOME
                 |- Httpd.pm
         +- RTSP
             |- RTSP Server Modules etc...
+```
 
 ## Windows Execute Directory Structure
 
+```
 HOME
 +- rtsp-server
     |- rtsp-server-gui.exe
@@ -169,6 +172,7 @@ HOME
     |- html <- HTML Setting Page Document Root for WEB Browser Interface 2017/09 Checkined.
     |- rtsp-server.json <- Setting File for GUI and Browser Interface Version 2017/09 Checkined.
     +- lib
+```
 
 # Todo:
 
