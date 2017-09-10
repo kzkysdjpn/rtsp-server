@@ -9,31 +9,32 @@ network simple.
 
 ![RTSP Server Model](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-model.png?raw=true)
 
-# INSTALLATION
-To install this module type the following:
-```
-   perl Makefile.PL
-   make
-   make test
-   make install
-```
-To install debian jessie dependences:
-```
-   sudo apt-get install libmoose-perl liburi-perl libmoosex-getopt-perl libsocket6-perl libanyevent-perl
-   sudo cpan AnyEvent::MPRPC::Client
-
-Clone from git
-   git clone https://github.com/revmischa/rtsp-server
-
-Then make, test and install
-   perl Makefile.PL
-   make
-   make test
-   make install
-
 ```
 
 # RUNNING
+
+## Interface for Windows GUI Version (Windows only)
+
+`perl rtsp-server-gui.pl`
+
+![RTSP Server Windows GUI Main View](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-gui_0000.jpg?raw=true)
+
+## Interface for WEB Interface Version (Windows, Linux and etc....)
+
+`perl rtsp-server-web.pl`
+
+
+The server status and setting interface access via browser.
+
+`http://127.0.0.1:8090`
+
+The initial account information is shown below.
+
+ID is `admin` and Password is `admin`.
+
+![RTSP Server WEB Interface Status View](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-web_0000.jpg?raw=true)
+
+## Source Stream Client
 
 Simply fire up the included rtsp-server.pl application and it will
 listen for clients on port 554 (standard RTSP port), and source
@@ -47,26 +48,15 @@ ANNOUNCE and RECORD RTSP methods, such as [FFmpeg](https://www.ffmpeg.org/ffmpeg
 You should then be able to play that stream with any decent media
 player. Just point it at rtsp://12.34.56.78/abc
 
-If you don't want to run it as root, you may specify non-priviliged
-ports with `--clientport/-c` and `--sourceport/-s`
+## Execute Command Line
 
-## Interface for Windows GUI Version (Windows only)
+Windows GUI Command Line Execute Setting
 
-`perl rtsp-server-gui.pl`
+![Setting View Windows GUI](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-gui_0002.jpg?raw=true)
 
-## Interface for WEB Interface Version (Windows, Linux and etc....)
+Browser Interface Command Line Execute Setting
 
-`perl rtsp-server-web.pl`
-
-The server status and setting interface access via browser.
-
-`http://127.0.0.1:8090`
-
-The initial account information is shown below.
-
-ID is `admin` and Password is `admin`.
-
-## Execute Command Line (Extend by Kazuki Yoshida)
+![Setting View Browser Interface](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-web_0002.jpg?raw=true)
 
 | Replace Code       | Description                                               | Example Value       |
 |:-------------------|:----------------------------------------------------------|:--------------------|
