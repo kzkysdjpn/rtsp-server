@@ -152,6 +152,12 @@ has 'on_dblclk_process' => (
 	is => 'rw',
 );
 
+has 'current_local_ip_index' => (
+	is => 'rw',
+	isa => 'Int',
+	default => 0,
+);
+
 sub open {
 	my ($self) = @_;
 
@@ -363,9 +369,17 @@ sub setup_main_window {
 
 sub update_address_button {
 	my ($self) = @_;
+	my $index = $self->{gui_handle}->current_local_ip_index + 1;
 	my @local_addrs = map { s/^.*://; s/\s//; $_ } grep {/IPv4/} `ipconfig`;
-	$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
-	$self->Text("Local PC IP and Port is " . $local_addrs[0] . ":" . $self->{gui_handle}->config_data->{RTSP_SOURCE_PORT});
+	if($index >= scalar(@local_addrs)){
+		$self->{gui_handle}->current_local_ip_index(0);
+		$local_addrs[0] =~ s/(\r\n|\r|\n)$//g;
+		$self->Text("Local PC IP and Port is " . $local_addrs[0] . ":" . $self->{gui_handle}->config_data->{RTSP_SOURCE_PORT});
+		return;
+	}
+	$local_addrs[$index] =~ s/(\r\n|\r|\n)$//g;
+	$self->Text("Local PC IP and Port is " . $local_addrs[$index] . ":" . $self->{gui_handle}->config_data->{RTSP_SOURCE_PORT});
+	$self->{gui_handle}->current_local_ip_index($index);
 	return;
 }
 
