@@ -144,16 +144,25 @@ HOME
     |- rtsp-server.json <- Setting File for GUI and Browser Interface Version 2017/09 Checkined.
     |- strawberry_perl32_pp_to_gui_exe.bat <- To Windows GUI Interface, Build for Windows Execute File by PAR::Packer script. 2017/09 Checkined.
     |- strawberry_perl32_pp_to_web_exe.bat <- To WEB Browser Interface, Build for Windows Execute File by PAR::Packer script. 2017/09 Checkined.
+    +- cores
+        +- ffmpeg
+            +- bin
+               |- README.txt <- Describe this directory.
+               |- ffmpeg.exe <- Copy to Your Self
+               +- ffplay.exe <- Copy to Your Self
+    +- record_files
+        +- README.txt <- Describe this directory.
+
     +- lib
-        |- Interface <- 2017/09 Checkined.
+        +- Interface <- 2017/09 Checkined.
             |- ConfigFile.pm
             |- ExternalCall.pm
-            |- GUI
-                |- Win32.pm
+            +- GUI
+                +- Win32.pm
             +- WEB
-                |- Httpd.pm
+                +- Httpd.pm
         +- RTSP
-            |- RTSP Server Modules etc...
+            +- RTSP Server Modules etc...
 ```
 
 ## Windows Execute Directory Structure
@@ -163,8 +172,16 @@ HOME
 +- rtsp-server
     |- rtsp-server-gui.exe
     |- rtsp-server-web.exe
-    |- html <- HTML Setting Page Document Root for WEB Browser Interface 2017/09 Checkined.
-    |- rtsp-server.json <- Setting File for GUI and Browser Interface Version 2017/09 Checkined.
+    |- html
+    |- rtsp-server.json
+    +- cores
+        +- ffmpeg
+            +- bin
+               |- README.txt
+               |- ffmpeg.exe
+               +- ffplay.exe
+    +- record_files
+        +- README.txt
     +- lib
 ```
 
