@@ -10,20 +10,24 @@ network simple.
 This server was extended as below function (2017/09).
 
 - User Interface
+
  The source stream connection status and setting parameters are able to check via Windows GUI or WEB browser.
 
 - Source User Authentication
+
  In RTSP source stream, digest authentication has been implemented.
 
 - TCP Interleaved at Source Stream
+
  In RTSP source stream, the TCP interleaved mode has been implemented.
 
 - External Command Call by Event
+
  On duble click(Windows only) and on receive source stream, this server execute other command line program(ffmpeg etc.).
 
 ![RTSP Server Model](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-model.png?raw=true)
 
-# RUNNING
+# To Start
 
 ## Interface for Windows GUI Version (Windows only)
 
@@ -46,21 +50,29 @@ ID is `admin` and Password is `admin`.
 
 ![RTSP Server WEB Interface Status View](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-web_0000.jpg?raw=true)
 
-## Source Stream Client
+# To Connect the Stream Client
+
+The server assigned IP and port are displayed on status screen.
 
 Simply fire up the included rtsp-server.pl application and it will
-listen for clients on port 554 (standard RTSP port), and source
-streams on port 5545.
+listen for clients on port 5545 (standard RTSP port), and source
+streams on port 5445.
 
 To begin sending video, you can use any client which supports the
 ANNOUNCE and RECORD RTSP methods, such as [FFmpeg](https://www.ffmpeg.org/ffmpeg-protocols.html#rtsp):
 
-`ffmpeg -re -i /input.avi -f rtsp -muxdelay 0.1 rtsp://12.34.56.78:5545/abc`
+`ffmpeg -re -i /input.avi -f rtsp -muxdelay 0.1 rtsp://12.34.56.78:5445/abc`
+
+The iOS application released at App. Store and Google Play Store.
+
+<a href="https://itunes.apple.com/us/app/live-reporter-security-and-broadcasting-camera/id996017825?mt=8" style="display:inline-block;overflow:hidden;background:url(//linkmaker.itunes.apple.com/assets/shared/badges/ja-jp/appstore-lrg.svg) no-repeat;width:135px;height:40px;background-size:contain;"></a>
+
+<a href='https://play.google.com/store/apps/details?id=net.kzkysdjpn.live_reporter&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png'/></a>
 
 You should then be able to play that stream with any decent media
 player. Just point it at rtsp://12.34.56.78/abc
 
-## Execute Command Line
+# Setting Execute Command Line
 
 Windows GUI Command Line Execute Setting
 
@@ -78,9 +90,9 @@ Browser Interface Command Line Execute Setting
 | <%SourceCount%>    | Replace to accumulation souce connection count            | 8                   |
 | <%AppPath%>        | Replace to replace to execute perl script directory       | C:\rtsp-server      |
 
-### Examples (For Windows)
+## Examples (For Windows)
 
-#### Recording on your hard disk 
+### Recording on your hard disk 
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\record_files\<%SourceName%>_<%DateTime%>.ts`
 
@@ -90,7 +102,7 @@ Replace as Example
 
 Do not use mp4 format. The format needs finalize atom table process. The process dosen't make it in time.
 
-#### Playing on your display 
+### Playing on your display 
 
 `<%AppPath%>\cores\ffmpeg\bin\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>`
 
@@ -98,7 +110,7 @@ Replace as Example
 
 `C:\rtsp-server\cores\ffmpeg\bin\ffplay.exe rtsp://127.0.0.1:5545/live`
 
-#### Create HTTP Live Streaming
+### Create HTTP Live Streaming
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
 
@@ -106,7 +118,7 @@ Replace as Example
 
 `C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\live.m3u8 C:\inetpub\wwwroot\live_20170801090000_%04d.ts`
 
-#### Upload to Youtube Live
+### Upload to Youtube Live
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx` 
 
@@ -123,17 +135,52 @@ For any upload Youtube live stream, the source name(<%SourceName%>) will be matc
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/<%SoureName%>` 
 
-# TODO:
+# Directory
+
+## Source Directroy Structure
+
+HOME
++- rtsp-server
+    |- rtsp-server.pl <- Base Main Module.
+    |- rtsp-server-gui.pl <- Windows GUI Interface Version 2017/09 Checkined.
+    |- rtsp-server-web.pl <- WEB Browser Interface Version 2017/09 Checkined.
+    |- README.md
+    |- html <- HTML Setting Page Document Root for WEB Browser Interface 2017/09 Checkined.
+    |- rtsp-server.json <- Setting File for GUI and Browser Interface Version 2017/09 Checkined.
+    |- strawberry_perl32_pp_to_gui_exe.bat <- To Windows GUI Interface, Build for Windows Execute File by PAR::Packer script. 2017/09 Checkined.
+    |- strawberry_perl32_pp_to_web_exe.bat <- To WEB Browser Interface, Build for Windows Execute File by PAR::Packer script. 2017/09 Checkined.
+    +- lib
+        |- Interface <- 2017/09 Checkined.
+            |- ConfigFile.pm
+            |- ExternalCall.pm
+            |- GUI
+                |- Win32.pm
+            +- WEB
+                |- Httpd.pm
+        +- RTSP
+            |- RTSP Server Modules etc...
+
+## Windows Execute Directory Structure
+
+HOME
++- rtsp-server
+    |- rtsp-server-gui.exe
+    |- rtsp-server-web.exe
+    |- html <- HTML Setting Page Document Root for WEB Browser Interface 2017/09 Checkined.
+    |- rtsp-server.json <- Setting File for GUI and Browser Interface Version 2017/09 Checkined.
+    +- lib
+
+# Todo:
 
 Priv dropping, authentication, client encoder, stats, tests
 
-# DEPENDENCIES
+# Dependencies
 
 This module requires these other modules and libraries:
 
   Moose, AnyEvent::Socket, AnyEvent::Handle
 
-# COPYRIGHT AND LICENCE
+# Copyright And Licence
 
 Copyright (C) 2014 by Mischa Spiegelmock
 
