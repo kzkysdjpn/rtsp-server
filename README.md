@@ -9,8 +9,6 @@ network simple.
 
 ![RTSP Server Model](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-model.png?raw=true)
 
-```
-
 # RUNNING
 
 ## Interface for Windows GUI Version (Windows only)
