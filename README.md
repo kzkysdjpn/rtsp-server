@@ -7,6 +7,8 @@ Clients can connect and send RTSP commands to receive RTP data.
 This was designed to make rebroadcasting audio and video data over a
 network simple.
 
+![RTSP Server Model](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-model.png?raw=true)
+
 # INSTALLATION
 To install this module type the following:
 ```
