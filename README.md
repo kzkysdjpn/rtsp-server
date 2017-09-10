@@ -7,6 +7,20 @@ Clients can connect and send RTSP commands to receive RTP data.
 This was designed to make rebroadcasting audio and video data over a
 network simple.
 
+This server was extended as below function (2017/09).
+
+- User Interface
+ The source stream connection status and setting parameters are able to check via Windows GUI or WEB browser.
+
+- Source User Authentication
+ In RTSP source stream, digest authentication has been implemented.
+
+- TCP Interleaved at Source Stream
+ In RTSP source stream, the TCP interleaved mode has been implemented.
+
+- External Command Call by Event
+ On duble click(Windows only) and on receive source stream, this server execute other command line program(ffmpeg etc.).
+
 ![RTSP Server Model](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-model.png?raw=true)
 
 # RUNNING
