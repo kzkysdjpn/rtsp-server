@@ -200,7 +200,7 @@ HOME
             +- RTSP Server Modules etc...
 ```
 
-## Windows Execute Directory Structure
+## Windows Execute Binary Directory Structure
 
 ```
 HOME
@@ -224,13 +224,7 @@ HOME
 
 Priv dropping, authentication, client encoder, stats, tests
 
-# Dependencies
-
-This module requires these other modules and libraries:
-
-  Moose, AnyEvent::Socket, AnyEvent::Handle
-
-# Copyright And Licence
+# Copyright and Licence
 
 Copyright (C) 2014 by Mischa Spiegelmock
 
