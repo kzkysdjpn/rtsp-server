@@ -27,15 +27,42 @@ This server was extended as below function (2017/09).
 
 ![RTSP Server Model](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-model.png?raw=true)
 
-# To Start
+# Setup
 
-## Interface for Windows GUI Version (Windows only)
+## 1. Install Module
+
+`cpan install AnyEvent`
+
+`cpan install MooseX::Getopt`
+
+`cpan install UNIVERSAL::require`
+
+`cpan install Win32::GUI`
+
+## 2. Download and Copy External Command Line Program
+
+Download external command line program such as [FFmpeg](https://www.ffmpeg.org/).
+
+```
+HOME
++- rtsp-server
+    +- cores
+        +- ffmpeg
+            +- bin
+               |- README.txt <- Describe this directory.
+               |- ffmpeg.exe <- Copy the Command Line Program
+               +- ffplay.exe <- Copy the Command Line Program
+
+```
+## 3. Start Up a RTSP Server
+
+### Interface for Windows GUI Version (For Windows only)
 
 `perl rtsp-server-gui.pl`
 
 ![RTSP Server Windows GUI Main View](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-gui_0000.jpg?raw=true)
 
-## Interface for WEB Interface Version (Windows, Linux and etc....)
+### Interface for WEB Interface Version (For Windows, Linux and etc....)
 
 `perl rtsp-server-web.pl`
 
@@ -50,23 +77,7 @@ ID is `admin` and Password is `admin`.
 
 ![RTSP Server WEB Interface Status View](https://github.com/kzkysdjpn/readme_resource/blob/master/rtsp-server-web_0000.jpg?raw=true)
 
-# To Connect the Stream Client
-
-The server assigned IP and port are displayed on status screen.
-
-Simply fire up the included rtsp-server.pl application and it will
-listen for clients on port 5545 (standard RTSP port), and source
-streams on port 5445.
-
-To begin sending video, you can use any client which supports the
-ANNOUNCE and RECORD RTSP methods, such as [FFmpeg](https://www.ffmpeg.org/ffmpeg-protocols.html#rtsp):
-
-`ffmpeg -re -i /input.avi -f rtsp -muxdelay 0.1 rtsp://12.34.56.78:5445/abc`
-
-You should then be able to play that stream with any decent media
-player. Just point it at rtsp://12.34.56.78/abc
-
-# Setting Execute Command Line
+## 4. Setup Execute Command Line
 
 Windows GUI Command Line Execute Setting
 
@@ -84,9 +95,9 @@ Browser Interface Command Line Execute Setting
 | <%SourceCount%>    | Replace to accumulation souce connection count            | 8                   |
 | <%AppPath%>        | Replace to replace to execute perl script directory       | C:\rtsp-server      |
 
-## Examples (For Windows)
+### Examples (For Windows)
 
-### Recording on your hard disk 
+#### Recording on your hard disk 
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\record_files\<%SourceName%>_<%DateTime%>.ts`
 
@@ -96,7 +107,7 @@ Replace as Example
 
 Do not use mp4 format. The format needs finalize atom table process. The process dosen't make it in time.
 
-### Playing on your display 
+#### Playing on your display 
 
 `<%AppPath%>\cores\ffmpeg\bin\ffplay.exe rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%>`
 
@@ -104,7 +115,7 @@ Replace as Example
 
 `C:\rtsp-server\cores\ffmpeg\bin\ffplay.exe rtsp://127.0.0.1:5545/live`
 
-### Create HTTP Live Streaming
+#### Create HTTP Live Streaming
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
 
@@ -112,7 +123,7 @@ Replace as Example
 
 `C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\live.m3u8 C:\inetpub\wwwroot\live_20170801090000_%04d.ts`
 
-### Upload to Youtube Live
+#### Upload to Youtube Live
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx` 
 
@@ -128,6 +139,30 @@ For any upload Youtube live stream, the source name(<%SourceName%>) will be matc
 
 
 `<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -c:a 2 -f flv rtmp://a.rtmp.youtube.com/live2/<%SoureName%>` 
+
+
+## 4. To Connect the Stream Client
+
+The server assigned IP and port are displayed on status screen.
+
+Simply fire up the included rtsp-server.pl application and it will
+listen for clients on port 5545 (standard RTSP port), and source
+streams on port 5445.
+
+### FFmpeg
+
+To begin sending video, you can use any client which supports the
+ANNOUNCE and RECORD RTSP methods, such as [FFmpeg](https://www.ffmpeg.org/ffmpeg-protocols.html#rtsp):
+
+`ffmpeg -re -i /input.avi -f rtsp -muxdelay 0.1 rtsp://12.34.56.78:5445/abc`
+
+### Live-Reporter
+
+[Live-Reporter](http://kzkysdjpn.mydns.jp/index.html?LANG=en) is live streaming from smartphone camera.
+The application supports for iOS and Android.
+
+In addition, You should then be able to play that stream with any decent media
+player. Just point it at rtsp://12.34.56.78/abc
 
 # Directory
 
