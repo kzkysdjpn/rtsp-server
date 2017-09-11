@@ -217,9 +217,9 @@ sub start_process
 	my $frozen;
 	my $reply;
 	if ( $^O eq "MSWin32"){
-		my $win_cmd_line = $self->external_command_line;
-		$win_cmd_line =~ s|/|\\|g;
-		my ($filename, $args) = split(/ / , $win_cmd_line, 2);
+		my ($filename, $args) = split(/ / , $self->external_command_line, 2);
+		$filename =~ s|/|\\|g;
+
 		$args = ' ' . $args;
 		my $flag = Win32::Process::CREATE_NO_WINDOW();
 		Win32::Process::Create($pid, $filename, $args, 0, $flag, ".") || return 0;
