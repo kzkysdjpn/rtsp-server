@@ -217,7 +217,9 @@ sub start_process
 	my $frozen;
 	my $reply;
 	if ( $^O eq "MSWin32"){
-		my ($filename, $args) = split(/ / , $self->external_command_line, 2);
+		my $win_cmd_line = $self->external_command_line;
+		$win_cmd_line =~ s|/|\\|g;
+		my ($filename, $args) = split(/ / , $win_cmd_line, 2);
 		$args = ' ' . $args;
 		my $flag = Win32::Process::CREATE_NO_WINDOW();
 		Win32::Process::Create($pid, $filename, $args, 0, $flag, ".") || return 0;
@@ -227,9 +229,12 @@ sub start_process
 		$self->reply_status($pid->GetProcessID());
 		return 1;
 	}
+	my $linux_cmd_line = $self->external_command_line;
+	$linux_cmd_line =~ s|\.exe||g;
+	$linux_cmd_line =~ s|\\|/|g;
 	my $data = {
 		'OPS' => 0,
-		'CMD' => $self->external_command_line,
+		'CMD' => $linux_cmd_line,
 		'PID' => 0,
 	};
 	$frozen = nfreeze $data;
