@@ -29,7 +29,11 @@ This server was extended as below function (2017/09).
 
 # Setup
 
+The RTSP-Server Windows executable binary download at [32bit is here](http://kzkysdjpn.mydns.jp/rtsp-server/rtsp-server32bit.zip) and [64bit is here](http://kzkysdjpn.mydns.jp/rtsp-server/rtsp-server64bit.zip).
+
 ## 1. Install Module
+
+The Windows executable binary version is passed to install module.
 
 `cpan install AnyEvent`
 
@@ -93,7 +97,7 @@ Browser Interface Command Line Execute Setting
 | <%RTSPClientPort%> | Replace to client side RTSP request port                  | 5545                |
 | <%DateTime%>       | Replace to date Time information string as yyyymmddHHMMSS | 2017:08:01 09:00:00 |
 | <%SourceCount%>    | Replace to accumulation souce connection count            | 8                   |
-| <%AppPath%>        | Replace to replace to execute perl script directory       | C:\rtsp-server      |
+| <%AppPath%>        | Replace to execute perl script directory       | C:\rtsp-server      |
 
 ### Examples (For Windows)
 
@@ -161,7 +165,7 @@ ANNOUNCE and RECORD RTSP methods, such as [FFmpeg](https://www.ffmpeg.org/ffmpeg
 [Live-Reporter](http://kzkysdjpn.mydns.jp/index.html?LANG=en) is live streaming from smartphone camera.
 The application supports for iOS and Android.
 
-In addition, You should then be able to play that stream with any decent media
+You can play the RTSP stream directly by any decent media
 player. Just point it at rtsp://12.34.56.78/abc
 
 # Directory
