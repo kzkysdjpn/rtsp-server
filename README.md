@@ -103,11 +103,11 @@ Browser Interface Command Line Execute Setting
 
 #### Recording on your hard disk 
 
-`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy <%AppPath%>\record_files\<%SourceName%>_<%DateTime%>.ts`
+`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -fflags +genpts -f rtsp -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -ss 00:00:01 -c:v copy -v:a copy <%AppPath%>\record_files\<%SourceName%>_<%DateTime%>.ts`
 
 Replace as Example
 
-`C:\rtsp-server\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy C:\rtsp-server\record_files\live_20170801090000.ts`
+`C:\rtsp-server\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -fflags +genpts -f rtsp -i rtsp://127.0.0.1:5545/live -ss 00:00:01 -c:v copy -v:a copy C:\rtsp-server\record_files\live_20170801090000.ts`
 
 Do not use mp4 format. The format needs finalize atom table process. The process dosen't make it in time.
 
@@ -121,11 +121,11 @@ Replace as Example
 
 #### Create HTTP Live Streaming
 
-`<%AppPath%>\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts`
+ <%AppPath%>/cores/ffmpeg/bin/ffmpeg -y -loglevel quiet -fflags +genpts -f rtsp -i rtsp://127.0.0.1:<%RTSPClientPort%>/<%SourceName%> -ss 00:00:01 -c:v copy -c:a copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\<%SourceName%>.m3u8 C:\inetpub\wwwroot\<%SourceName%>_<%DateTime%>_%04d.ts
 
 Replace as Example
 
-`C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -i rtsp://127.0.0.1:5545/live -vcodec copy -acodec copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\live.m3u8 C:\inetpub\wwwroot\live_20170801090000_%04d.ts`
+`C:\rtsp-verver\cores\ffmpeg\bin\ffmpeg.exe -loglevel quiet -fflags +genpts -f rtsp -i rtsp://127.0.0.1:5545/live -ss 00:00:01 -c:v copy -c:a copy -f segment -segment_format mpegts -segment_time 30 -segment_list C:\inetpub\wwwroot\live.m3u8 C:\inetpub\wwwroot\live_20170801090000_%04d.ts`
 
 #### Upload to Youtube Live
 
